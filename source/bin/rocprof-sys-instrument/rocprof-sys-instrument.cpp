@@ -2520,11 +2520,13 @@ main(int argc, char** argv)
             for(auto* itr : init_names)
                 app_thread->oneTimeCode(*itr);
             
+            static bool detaching = false;
             exit_callback = [&app_thread](){
-                verbprintf(1, "##############Gracefully exiting.......");
-                verbprintf(1, "##############Stopping Execution");
+                verbprintf(1, "##############Gracefully exiting.......\n");
+                verbprintf(1, "##############Stopping Execution\n");
+                detaching = true;
                 app_thread->stopExecution();
-                verbprintf(1, "##############Executing finish codes");
+                verbprintf(1, "##############Executing finish codes\n");
                 for(auto* itr: fini_names)
                     app_thread->oneTimeCode(*itr);
                 verbprintf(1, "###############Detaching")
@@ -2535,8 +2537,10 @@ main(int argc, char** argv)
             app_thread->continueExecution();
             while(!app_thread->isTerminated())
             {
-                while(bpatch->waitForStatusChange())
+                while(bpatch->pollForStatusChange()){
                     app_thread->continueExecution();
+                    sleep(1);
+                }
             }
             _compute_exit_code();
         }
