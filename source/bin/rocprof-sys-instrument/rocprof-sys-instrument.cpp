@@ -2522,15 +2522,16 @@ main(int argc, char** argv)
             
             exit_callback = [&app_thread](){
                 verbprintf(1, "##############Gracefully exiting.......");
+                verbprintf(1, "##############Stopping Execution");
+                app_thread->stopExecution();
                 verbprintf(1, "##############Executing finish codes");
                 for(auto* itr: fini_names)
                     app_thread->oneTimeCode(*itr);
                 verbprintf(1, "###############Detaching")
-                app_thread->stopExecution();
                 app_thread->detach(true);
                 verbprintf(1, "###############Finish graceful exit....");
             };
-            
+
             app_thread->continueExecution();
             while(!app_thread->isTerminated())
             {
