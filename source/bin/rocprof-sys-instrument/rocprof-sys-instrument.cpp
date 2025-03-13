@@ -187,6 +187,7 @@ string_t                                   print_overlapping    = {};
 strset_t                                   print_formats        = { "txt", "json" };
 std::string                                modfunc_dump_dir     = {};
 auto regex_opts = std::regex_constants::egrep | std::regex_constants::optimize;
+std::function<void()> exit_callback;
 
 std::string
 get_internal_libpath()
@@ -252,6 +253,9 @@ activate_signal_handlers(const std::vector<sys_signal>& _signals)
         TIMEMORY_PRINTF_FATAL(
             stderr, "rocprof-sys exited with signal %i :: %s\n", nsig,
             signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
+        
+        if (exit_callback)
+            exit_callback();
 
         // print any forced entries
         print_log_entries(
@@ -2515,7 +2519,18 @@ main(int argc, char** argv)
             verbprintf(1, "Executing initial snippets...\n");
             for(auto* itr : init_names)
                 app_thread->oneTimeCode(*itr);
-
+            
+            exit_callback = [&app_thread](){
+                verbprintf(1, "##############Gracefully exiting.......");
+                verbprintf(1, "##############Executing finish codes");
+                for(auto* itr: fini_names)
+                    app_thread->oneTimeCode(*itr);
+                verbprintf(1, "###############Detaching")
+                app_thread->stopExecution();
+                app_thread->detach(true);
+                verbprintf(1, "###############Finish graceful exit....");
+            };
+            
             app_thread->continueExecution();
             while(!app_thread->isTerminated())
             {
