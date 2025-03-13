@@ -2537,10 +2537,11 @@ main(int argc, char** argv)
             app_thread->continueExecution();
             while(!app_thread->isTerminated())
             {
-                while(bpatch->pollForStatusChange()){
-                    app_thread->continueExecution();
-                    sleep(1);
-                }
+                // while(bpatch->pollForStatusChange()){
+                //     app_thread->continueExecution();
+                //     sleep(1);
+                // }
+                sleep(1);
             }
             _compute_exit_code();
         }
