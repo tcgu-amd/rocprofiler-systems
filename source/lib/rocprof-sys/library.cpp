@@ -695,6 +695,7 @@ rocprofsys_finalize_hidden(void)
     }
 
     if(get_verbose() >= 0 || get_debug()) fprintf(stderr, "\n");
+    ROCPROFSYS_VERBOSE_F(0, "a...\n");
     ROCPROFSYS_VERBOSE_F(0, "finalizing...\n");
 
     ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
