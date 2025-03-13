@@ -695,7 +695,6 @@ rocprofsys_finalize_hidden(void)
     }
 
     if(get_verbose() >= 0 || get_debug()) fprintf(stderr, "\n");
-    ROCPROFSYS_VERBOSE_F(0, "a...\n");
     ROCPROFSYS_VERBOSE_F(0, "finalizing...\n");
 
     ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
@@ -732,6 +731,7 @@ rocprofsys_finalize_hidden(void)
     push_enable_sampling_on_child_threads(false);
     set_sampling_on_all_future_threads(false);
 
+    ROCPROFSYS_VERBOSE_F(0, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\n");
     // if the categories are not enabled, it can/will suppress generating output for data
     // in category
     categories::enable_categories();
@@ -742,7 +742,7 @@ rocprofsys_finalize_hidden(void)
     scope::destructor _debug_dtor{ [_debug_value, _debug_init]() {
         if(_debug_init) config::set_setting_value("ROCPROFSYS_DEBUG", _debug_value);
     } };
-
+    ROCPROFSYS_VERBOSE_F(0, "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG\n");
     auto& _thread_bundle = thread_data<thread_bundle_t>::instance();
     if(_thread_bundle) _thread_bundle->stop();
 
@@ -758,20 +758,20 @@ rocprofsys_finalize_hidden(void)
 
     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_push_trace :: called %zux\n", _push_count);
     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_pop_trace  :: called %zux\n", _pop_count);
-
+    ROCPROFSYS_VERBOSE_F(0, "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n");
     tim::signals::enable_signal_detection({ tim::signals::sys_signal::Interrupt },
                                           [](int) {});
 
     ROCPROFSYS_DEBUG_F("Copying over all timemory hash information to main thread...\n");
     tracing::copy_timemory_hash_ids();
-
+    ROCPROFSYS_VERBOSE_F(0, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
     // stop the main bundle which has stats for run
     if(get_main_bundle())
     {
         ROCPROFSYS_DEBUG_F("Stopping main bundle...\n");
         get_main_bundle()->stop();
     }
-
+    ROCPROFSYS_VERBOSE_F(0, "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ\n");
     fini_bundle_t _finalization{};
     _finalization.start();
 
@@ -800,7 +800,7 @@ rocprofsys_finalize_hidden(void)
         rocprofiler_sdk::shutdown();
     }
 #endif
-
+    ROCPROFSYS_VERBOSE_F(0, "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n");
     ROCPROFSYS_DEBUG_F("Stopping and destroying instrumentation bundles...\n");
     for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
     {
@@ -826,7 +826,7 @@ rocprofsys_finalize_hidden(void)
             itr->pop_back();
         }
     }
-
+    ROCPROFSYS_VERBOSE_F(0, "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL\n");
     // stop the main gotcha which shuts down the pthread gotchas
     if(get_init_bundle())
     {
@@ -863,6 +863,7 @@ rocprofsys_finalize_hidden(void)
         sampling::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n");
     ROCPROFSYS_VERBOSE_F(3, "Reporting the process- and thread-level metrics...\n");
     // report the high-level metrics for the process
     if(get_main_bundle())
@@ -875,7 +876,7 @@ rocprofsys_finalize_hidden(void)
         ROCPROFSYS_DEBUG_F("Resetting main bundle...\n");
         get_main_bundle()->reset();
     }
-
+    ROCPROFSYS_VERBOSE_F(0, "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\n");
     // print out thread-data if they are not still running
     // if they are still running (e.g. thread-pool still alive), the
     // thread-specific data will be wrong if try to stop them from
@@ -897,7 +898,7 @@ rocprofsys_finalize_hidden(void)
     }
 
     ROCPROFSYS_VERBOSE_F(0, "\n");
-
+    ROCPROFSYS_VERBOSE_F(0, "ooooooooooooooooooooooooooooooooooooooooooo\n");
     // ensure that all the MT instances are flushed
     if(get_use_sampling())
     {
@@ -916,7 +917,7 @@ rocprofsys_finalize_hidden(void)
         ROCPROFSYS_VERBOSE_F(1, "Post-processing the system-level samples...\n");
         process_sampler::post_process();
     }
-
+    ROCPROFSYS_VERBOSE_F(0, "PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP\n");
     // shutdown tasking before timemory is finalized
     ROCPROFSYS_VERBOSE_F(1, "Shutting down thread-pools...\n");
     tasking::shutdown();
@@ -926,7 +927,7 @@ rocprofsys_finalize_hidden(void)
         ROCPROFSYS_VERBOSE_F(1, "Post-processing the code coverage...\n");
         coverage::post_process();
     }
-
+    ROCPROFSYS_VERBOSE_F(0, "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ\n");
     tracing::copy_timemory_hash_ids();
 
     bool _perfetto_output_error = false;
@@ -992,6 +993,333 @@ rocprofsys_finalize_hidden(void)
 
     common::destroy_static_objects();
 }
+
+//======================================================================================//
+
+// extern "C" void
+// rocprofsys_detach_hidden(void)
+// {
+//     // disable thread id recycling during finalization
+//     threading::recycle_ids() = false;
+//     // disable initialization callback
+//     threading::remove_callback(&ensure_initialization);
+
+//     bool _is_child = is_child_process();
+
+//     set_thread_state(ThreadState::Completed);
+
+//     // return if not active
+//     if(get_state() != State::Active)
+//     {
+//         ROCPROFSYS_BASIC_DEBUG_F("State = %s. Finalization skipped\n",
+//                                  std::to_string(get_state()).c_str());
+//         return;
+//     }
+//     else if(_is_child)
+//     {
+//         set_state(State::Finalized);
+//         // std::quick_exit(EXIT_SUCCESS);
+//         return;
+//     }
+
+//     if(get_verbose() >= 0 || get_debug()) fprintf(stderr, "\n");
+//     ROCPROFSYS_VERBOSE_F(0, "Detaching...\n");
+//     ROCPROFSYS_VERBOSE_F(0, "finalizing...\n");
+
+//     ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+//     // sampling::block_samples();
+//     ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
+
+//     // thread_info::set_stop(comp::wall_clock::record());
+
+//     ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
+//     tim::signals::block_signals(get_sampling_signals(),
+//                                 tim::signals::sigmask_scope::process);
+//     ROCPROFSYS_VERBOSE_F(0, "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n");
+
+//     rocprofsys_reset_preload_hidden();
+
+//     // some functions called during finalization may alter the push/pop count so we need
+//     // to save them here
+//     auto _push_count = tracing::push_count().load();
+//     auto _pop_ctracing::pop_count().load();
+
+//     // e.g. rocprofsys_pop_trace("main");
+//     if(_push_count > _pop_count)
+//     {
+//         for(auto& itr : tracing::get_finalization_functions())
+//         {
+//             itr();
+//             ++_pop_count;
+//         }
+//     }
+
+//     set_state(State::Finalized);
+//     ROCPROFSYS_VERBOSE_F(0, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
+
+//     push_enable_sampling_on_child_threads(false);
+//     set_sampling_on_all_future_threads(false);
+
+//     // if the categories are not enabled, it can/will suppress generating output for data
+//     // in category
+//     categories::enable_categories();
+
+//     auto _debug_init  = get_debug_finalize();
+//     auto _debug_value = get_debug();
+//     if(_debug_init) config::set_setting_value("ROCPROFSYS_DEBUG", true);
+//     scope::destructor _debug_dtor{ [_debug_value, _debug_init]() {
+//         if(_debug_init) config::set_setting_value("ROCPROFSYS_DEBUG", _debug_value);
+//     } };
+
+//     auto& _thread_bundle = thread_data<thread_bundle_t>::instance();
+//     if(_thread_bundle) _thread_bundle->stop();
+
+//     if(get_verbose() >= 1 || get_debug())
+//     {
+//         if(dmp::rank() == 0)
+//         {
+//             ROCPROFSYS_PRINT_F("\n");
+//             config::print_settings(
+//                 tim::get_env<bool>("ROCPROFSYS_PRINT_ENV", get_debug()));
+//         }
+//     }
+
+//     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_push_trace :: called %zux\n", _push_count);
+//     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_pop_trace  :: called %zux\n", _pop_count);
+
+//     tim::signals::enable_signal_detection({ tim::signals::sys_signal::Interrupt },
+//                                           [](int) {});
+
+//     ROCPROFSYS_DEBUG_F("Copying over all timemory hash information to main thread...\n");
+//     tracing::copy_timemory_hash_ids();
+
+//     // stop the main bundle which has stats for run
+//     if(get_main_bundle())
+//     {
+//         ROCPROFSYS_DEBUG_F("Stopping main bundle...\n");
+//         get_main_bundle()->stop();
+//     }
+
+//     fini_bundle_t _finalization{};
+//     _finalization.start();
+
+//     if(get_use_vaapi_tracing())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down VA-API tracing...\n");
+//         component::vaapi_gotcha::shutdown();
+//     }
+
+//     if(get_use_rcclp())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down RCCLP...\n");
+//         rcclp::shutdown();
+//     }
+
+//     if(get_use_ompt())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down OMPT...\n");
+//         ompt::shutdown();
+//     }
+
+// #if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+//     // TODO: option for rocm
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
+//         rocprofiler_sdk::shutdown();
+//     }
+// #endif
+
+//     // ROCPROFSYS_DEBUG_F("Stopping and destroying instrumentation bundles...\n");
+//     // for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
+//     // {
+//     //     if(!instrumentation_bundles::get()) continue;
+//     //     const auto& _info = thread_info::get(i, SequentTID);
+//     //     auto&       itr   = instrumentation_bundles::get()->at(i);
+//     //     while(itr != nullptr && !itr->empty())
+//     //     {
+//     //         int _lvl = 1;
+//     //         if(_info->is_offset)
+//     //         {
+//     //             ++_pop_count;
+//     //             _lvl = 4;
+//     //         }
+//     //         ROCPROFSYS_VERBOSE_F(
+//     //             _lvl,
+//     //             "Warning! instrumentation bundle on thread %zu (TID=%li) "
+//     //             "with label '%s' was not stopped.\n",
+//     //             i, itr->back()->tid(), itr->back()->key().c_str());
+
+//     //         itr->back()->stop();
+//     //         itr->back()->pop();
+//     //         itr->pop_back();
+//     //     }
+//     // }
+
+//     // stop the main gotcha which shuts down the pthread gotchas
+//     if(get_init_bundle())
+//     {
+//         ROCPROFSYS_DEBUG_F("Stopping main gotcha...\n");
+//         get_init_bundle()->stop();
+
+//         pthread_gotcha::shutdown();
+//         component::numa_gotcha::shutdown();
+//     }
+
+//     // stop the gotcha bundle
+//     if(get_preinit_bundle())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down miscellaneous gotchas...\n");
+//         get_preinit_bundle()->stop();
+//         component::mpi_gotcha::shutdown();
+//     }
+
+//     if(get_use_process_sampling())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down background sampler...\n");
+//         process_sampler::shutdown();
+//     }
+
+//     if(get_use_causal())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down causal sampling...\n");
+//         causal::sampling::shutdown();
+//     }
+
+//     if(get_use_sampling())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down sampling...\n");
+//         sampling::shutdown();
+//     }
+
+//     ROCPROFSYS_VERBOSE_F(3, "Reporting the process- and thread-level metrics...\n");
+//     // report the high-level metrics for the process
+//     if(get_main_bundle())
+//     {
+//         ROCPROFSYS_VERBOSE_F(0, "\n");
+//         std::string _msg = JOIN("", *get_main_bundle());
+//         auto        _pos = _msg.find(">>>  ");
+//         if(_pos != std::string::npos) _msg = _msg.substr(_pos + 5);
+//         ROCPROFSYS_VERBOSE_F(0, "%s\n", _msg.c_str());
+//         ROCPROFSYS_DEBUG_F("Resetting main bundle...\n");
+//         get_main_bundle()->reset();
+//     }
+
+//     // print out thread-data if they are not still running
+//     // if they are still running (e.g. thread-pool still alive), the
+//     // thread-specific data will be wrong if try to stop them from
+//     // the main thread.
+//     auto _thr_verbose = (config::get_use_causal()) ? 1 : 0;
+//     if(thread_data<thread_bundle_t>::get())
+//     {
+//         for(auto& itr : *thread_data<thread_bundle_t>::get())
+//         {
+//             if(itr && itr->get<comp::wall_clock>() &&
+//                !itr->get<comp::wall_clock>()->get_is_running())
+//             {
+//                 std::string _msg = JOIN("", *itr);
+//                 auto        _pos = _msg.find(">>>  ");
+//                 if(_pos != std::string::npos) _msg = _msg.substr(_pos + 5);
+//                 ROCPROFSYS_VERBOSE_F(_thr_verbose, "%s\n", _msg.c_str());
+//             }
+//         }
+//     }
+
+//     ROCPROFSYS_VERBOSE_F(0, "\n");
+
+//     // ensure that all the MT instances are flushed
+//     if(get_use_sampling())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Post-processing the sampling backtraces...\n");
+//         sampling::post_process();
+//     }
+
+//     if(get_use_causal())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Finishing the causal experiments...\n");
+//         causal::finish_experimenting();
+//     }
+
+//     if(get_use_process_sampling())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Post-processing the system-level samples...\n");
+//         process_sampler::post_process();
+//     }
+
+//     // shutdown tasking before timemory is finalized
+//     ROCPROFSYS_VERBOSE_F(1, "Shutting down thread-pools...\n");
+//     tasking::shutdown();
+
+//     if(get_use_code_coverage())
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Post-processing the code coverage...\n");
+//         coverage::post_process();
+//     }
+
+//     tracing::copy_timemory_hash_ids();
+
+//     bool _perfetto_output_error = false;
+//     if(get_use_perfetto())
+//     {
+//         ROCPROFSYS_VERBOSE_F(0, "Finalizing perfetto...\n");
+//         rocprofsys::perfetto::post_process(_timemory_manager.get(),
+//                                            _perfetto_output_error);
+//     }
+
+//     if(_timemory_manager && _timemory_manager != nullptr)
+//     {
+//         _timemory_manager->add_metadata([](auto& ar) {
+//             auto _maps = tim::procfs::read_maps(process::get_id());
+//             auto _libs = std::set<std::string>{};
+//             for(auto& itr : _maps)
+//             {
+//                 auto&& _path = itr.pathname;
+//                 if(!_path.empty() && _path.at(0) != '[' && filepath::exists(_path))
+//                     _libs.emplace(_path);
+//             }
+//             ar(tim::cereal::make_nvp("memory_maps_files", _libs),
+//                tim::cereal::make_nvp("memory_maps", _maps));
+//         });
+
+//         ROCPROFSYS_VERBOSE_F(1, "Finalizing timemory...\n");
+//         tim::timemory_finalize(_timemory_manager.get());
+
+//         auto _cfg       = settings::compose_filename_config{};
+//         _cfg.use_suffix = config::get_use_pid();
+//         _cfg.suffix     = settings::default_process_suffix();
+//         _timemory_manager->write_metadata(settings::get_global_output_prefix(),
+//                                           "rocprofsys", _cfg);
+//     }
+
+//     categories::shutdown();
+
+//     _finalization.stop();
+
+//     if(_perfetto_output_error)
+//     {
+//         ROCPROFSYS_THROW("Error opening perfetto output file: %s",
+//                          get_perfetto_output_filename().c_str());
+//     }
+
+//     ROCPROFSYS_CI_THROW(
+//         _push_count > _pop_count, "%s",
+//         TIMEMORY_JOIN(" ",
+//                       "rocprofsys_push_trace was called more times than "
+//                       "rocprofsys_pop_trace. The inverse is fine but the current state "
+//                       "means not every measurement was ended :: pushed:",
+//                       _push_count, "vs. popped:", _pop_count)
+//             .c_str());
+
+//     debug::close_file();
+//     config::finalize();
+
+//     ROCPROFSYS_VERBOSE_F(0, "Finalized: %s\n", _finalization.as_string().c_str());
+
+//     tim::signals::enable_signal_detection(
+//         { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Stop },
+//         [](int) {});
+
+//     common::destroy_static_objects();
+// }
 
 //======================================================================================//
 
