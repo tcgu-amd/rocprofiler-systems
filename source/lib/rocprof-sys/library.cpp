@@ -697,16 +697,12 @@ rocprofsys_finalize_hidden(void)
     if(get_verbose() >= 0 || get_debug()) fprintf(stderr, "\n");
     ROCPROFSYS_VERBOSE_F(0, "finalizing...\n");
 
-    ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     sampling::block_samples();
-    ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
 
     thread_info::set_stop(comp::wall_clock::record());
 
-    ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
     tim::signals::block_signals(get_sampling_signals(),
                                 tim::signals::sigmask_scope::process);
-    ROCPROFSYS_VERBOSE_F(0, "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n");
 
     rocprofsys_reset_preload_hidden();
 
@@ -726,12 +722,10 @@ rocprofsys_finalize_hidden(void)
     }
 
     set_state(State::Finalized);
-    ROCPROFSYS_VERBOSE_F(0, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
 
     push_enable_sampling_on_child_threads(false);
     set_sampling_on_all_future_threads(false);
 
-    ROCPROFSYS_VERBOSE_F(0, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\n");
     // if the categories are not enabled, it can/will suppress generating output for data
     // in category
     categories::enable_categories();
@@ -742,7 +736,6 @@ rocprofsys_finalize_hidden(void)
     scope::destructor _debug_dtor{ [_debug_value, _debug_init]() {
         if(_debug_init) config::set_setting_value("ROCPROFSYS_DEBUG", _debug_value);
     } };
-    ROCPROFSYS_VERBOSE_F(0, "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG\n");
     auto& _thread_bundle = thread_data<thread_bundle_t>::instance();
     if(_thread_bundle) _thread_bundle->stop();
 
@@ -758,13 +751,11 @@ rocprofsys_finalize_hidden(void)
 
     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_push_trace :: called %zux\n", _push_count);
     ROCPROFSYS_VERBOSE_F(1, "rocprofsys_pop_trace  :: called %zux\n", _pop_count);
-    ROCPROFSYS_VERBOSE_F(0, "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH\n");
     tim::signals::enable_signal_detection({ tim::signals::sys_signal::Interrupt },
                                           [](int) {});
 
     ROCPROFSYS_DEBUG_F("Copying over all timemory hash information to main thread...\n");
     tracing::copy_timemory_hash_ids();
-    ROCPROFSYS_VERBOSE_F(0, "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
     // stop the main bundle which has stats for run
     if(get_main_bundle())
     {
@@ -775,18 +766,21 @@ rocprofsys_finalize_hidden(void)
     fini_bundle_t _finalization{};
     _finalization.start();
 
+    ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     if(get_use_vaapi_tracing())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down VA-API tracing...\n");
         component::vaapi_gotcha::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
     if(get_use_rcclp())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down RCCLP...\n");
         rcclp::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
     if(get_use_ompt())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down OMPT...\n");
