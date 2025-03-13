@@ -697,12 +697,16 @@ rocprofsys_finalize_hidden(void)
     if(get_verbose() >= 0 || get_debug()) fprintf(stderr, "\n");
     ROCPROFSYS_VERBOSE_F(0, "finalizing...\n");
 
+    ROCPROFSYS_VERBOSE_F(0, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
     sampling::block_samples();
+    ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
 
     thread_info::set_stop(comp::wall_clock::record());
 
+    ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
     tim::signals::block_signals(get_sampling_signals(),
                                 tim::signals::sigmask_scope::process);
+    ROCPROFSYS_VERBOSE_F(0, "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n");
 
     rocprofsys_reset_preload_hidden();
 
@@ -722,6 +726,7 @@ rocprofsys_finalize_hidden(void)
     }
 
     set_state(State::Finalized);
+    ROCPROFSYS_VERBOSE_F(0, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
 
     push_enable_sampling_on_child_threads(false);
     set_sampling_on_all_future_threads(false);
