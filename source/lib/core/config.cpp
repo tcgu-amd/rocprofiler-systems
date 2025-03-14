@@ -1208,7 +1208,6 @@ rocprofsys_detach_action(int nsig, siginfo_t *siginfo, void *data)
     ROCPROFSYS_BASIC_PRINT("Finalizing before detaching...\n");
     auto _handler = get_signal_handler().load();
     if(_handler) (*_handler)();
-    raise(20);
 }
 
 void
