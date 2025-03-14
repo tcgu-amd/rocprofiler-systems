@@ -773,20 +773,21 @@ rocprofsys_finalize_hidden(void)
         component::vaapi_gotcha::shutdown();
     }
 
-    ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
-    if(get_use_rcclp())
-    {
-        ROCPROFSYS_VERBOSE_F(1, "Shutting down RCCLP...\n");
-        rcclp::shutdown();
-    }
+    // ROCPROFSYS_VERBOSE_F(0, "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB\n");
+    // if(get_use_rcclp())
+    // {
+    //     ROCPROFSYS_VERBOSE_F(1, "Shutting down RCCLP...\n");
+    //     rcclp::shutdown();
+    // }
 
-    ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
-    if(get_use_ompt())
-    {
-        ROCPROFSYS_VERBOSE_F(1, "Shutting down OMPT...\n");
-        ompt::shutdown();
-    }
+    // ROCPROFSYS_VERBOSE_F(0, "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\n");
+    // if(get_use_ompt())
+    // {
+    //     ROCPROFSYS_VERBOSE_F(1, "Shutting down OMPT...\n");
+    //     ompt::shutdown();
+    // }
 
+    ROCPROFSYS_VERBOSE_F(0, "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n");
 #if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
     // TODO: option for rocm
     {
@@ -794,6 +795,7 @@ rocprofsys_finalize_hidden(void)
         rocprofiler_sdk::shutdown();
     }
 #endif
+    ROCPROFSYS_VERBOSE_F(0, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
     ROCPROFSYS_VERBOSE_F(0, "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n");
     ROCPROFSYS_DEBUG_F("Stopping and destroying instrumentation bundles...\n");
     for(size_t i = 0; i < thread_info::get_peak_num_threads(); ++i)
