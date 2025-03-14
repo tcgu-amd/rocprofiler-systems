@@ -2525,11 +2525,12 @@ main(int argc, char** argv)
                 verbprintf(1, "##############Gracefully exiting.......\n");
                 verbprintf(1, "##############Stopping Execution\n");
                 detaching = true;
-                app_thread->stopExecution();
+                // app_thread->stopExecution();
                 verbprintf(1, "##############Executing finish codes\n");
                 for(auto* itr: fini_names)
                     app_thread->oneTimeCode(*itr);
                 verbprintf(1, "###############Detaching")
+                app_thread->stopExecution();
                 app_thread->detach(true);
                 verbprintf(1, "###############Finish graceful exit....");
             };
