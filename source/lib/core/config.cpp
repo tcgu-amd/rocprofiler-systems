@@ -1201,7 +1201,7 @@ rocprofsys_exit_action(int nsig)
 }
 
 void
-rocprofsys_detach_action(int nsig)
+rocprofsys_detach_action(int nsig, siginfo_t *siginfo, void *data)
 {
     tim::signals::block_signals(get_sampling_signals(),
                                 tim::signals::sigmask_scope::process);
