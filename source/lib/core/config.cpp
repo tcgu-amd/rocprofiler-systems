@@ -1270,10 +1270,12 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
         if(_ignore_dyninst_trampoline)
             signal_settings::disable(static_cast<sys_signal>(_dyninst_trampoline_signal));
         // Use User1 signal for triggering finialization sequence during runtime
-        signal_settings::enable(sys_signal::User1);
-        signal_settings::set_action(sys_signal::User1, rocprofsys_detach_action);
+
         auto enabled_signals = signal_settings::get_enabled();
         tim::signals::enable_signal_detection(enabled_signals);
+
+        signal_settings::enable(sys_signal::User1);
+        signal_settings::set_action(sys_signal::User1, rocprofsys_detach_action);
     }
 
     if(_ignore_dyninst_trampoline)
