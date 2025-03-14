@@ -833,6 +833,7 @@ rocprofsys_finalize_hidden(void)
         component::numa_gotcha::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "111111111111111111111111111111111111111111\n");
     // stop the gotcha bundle
     if(get_preinit_bundle())
     {
@@ -841,6 +842,7 @@ rocprofsys_finalize_hidden(void)
         component::mpi_gotcha::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "222222222222222222222222222222222222222222\n");
     if(get_use_process_sampling())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down background sampler...\n");
