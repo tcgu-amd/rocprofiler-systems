@@ -1269,13 +1269,9 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
             signal_settings::enable(itr);
         if(_ignore_dyninst_trampoline)
             signal_settings::disable(static_cast<sys_signal>(_dyninst_trampoline_signal));
-        // Use User1 signal for triggering finialization sequence during runtime
 
         auto enabled_signals = signal_settings::get_enabled();
         tim::signals::enable_signal_detection(enabled_signals);
-
-        signal_settings::enable(sys_signal::User1);
-        signal_settings::set_action(sys_signal::User1, rocprofsys_detach_action);
     }
 
     if(_ignore_dyninst_trampoline)
@@ -1286,6 +1282,15 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
         _action.sa_handler = rocprofsys_trampoline_handler;
         sigaction(_dyninst_trampoline_signal, &_action, nullptr);
     }
+
+    // Set up custom signals for detaching instrumentation
+    // Avoid timemory here to execution to continue
+    int DETACH_SIG = 10;
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = rocprofsys_detach_action;
+    sa.sa_flags=SA_SIGINFO;
+    sigaction(DETACH_SIG, &sa, nullptr);
 }
 
 bool
