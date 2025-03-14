@@ -849,12 +849,14 @@ rocprofsys_finalize_hidden(void)
         process_sampler::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "333333333333333333333333333333333333333333\n");
     if(get_use_causal())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down causal sampling...\n");
         causal::sampling::shutdown();
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "4444444444444444444444444444444444444444444\n");
     if(get_use_sampling())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down sampling...\n");
