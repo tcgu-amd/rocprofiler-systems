@@ -1198,7 +1198,6 @@ rocprofsys_exit_action(int nsig)
                            signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
     auto _handler = get_signal_handler().load();
     if(_handler) (*_handler)();
-    kill(process::get_id(), nsig);
 }
 
 void
@@ -1209,7 +1208,7 @@ rocprofsys_detach_action(int nsig)
     ROCPROFSYS_BASIC_PRINT("Finalizing before detaching...\n");
     auto _handler = get_signal_handler().load();
     if(_handler) (*_handler)();
-    kill(process::get_id(), 20); //stop the process
+    raise(20);
 }
 
 void
