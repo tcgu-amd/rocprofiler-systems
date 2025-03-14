@@ -1202,6 +1202,17 @@ rocprofsys_exit_action(int nsig)
 }
 
 void
+rocprofsys_detach_action(int nsig)
+{
+    tim::signals::block_signals(get_sampling_signals(),
+                                tim::signals::sigmask_scope::process);
+    ROCPROFSYS_BASIC_PRINT("Finalizing before detaching...\n");
+    auto _handler = get_signal_handler().load();
+    if(_handler) (*_handler)();
+    kill(process::get_id(), 20); //stop the process
+}
+
+void
 rocprofsys_trampoline_handler(int _v)
 {
     if(get_verbose_env() >= 1)
@@ -1259,6 +1270,9 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
             signal_settings::enable(itr);
         if(_ignore_dyninst_trampoline)
             signal_settings::disable(static_cast<sys_signal>(_dyninst_trampoline_signal));
+        // Use User1 signal for triggering finialization sequence during runtime
+        signal_settings::enable(sys_signal::User1);
+        signal_settings::set_action(sys_signal::User1, rocprofsys_detach_action);
         auto enabled_signals = signal_settings::get_enabled();
         tim::signals::enable_signal_detection(enabled_signals);
     }

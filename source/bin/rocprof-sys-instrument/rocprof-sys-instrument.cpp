@@ -2521,17 +2521,24 @@ main(int argc, char** argv)
                 app_thread->oneTimeCode(*itr);
             
             static bool detaching = false;
-            exit_callback = [&app_thread](){
+            exit_callback = [&app_thread, _pid](){
                 verbprintf(1, "##############Gracefully exiting.......\n");
                 verbprintf(1, "##############Stopping Execution\n");
                 detaching = true;
+                app_thread->stopExecution();
                 // app_thread->stopExecution();
                 verbprintf(1, "##############Executing finish codes\n");
+                //Removing the last call which is rocprofsys_finialization
+                //as finalization is going to be triggered via a signal.
+                fini_names.pop_back();
                 for(auto* itr: fini_names)
                     app_thread->oneTimeCode(*itr);
-                verbprintf(1, "###############Detaching")
-                app_thread->stopExecution();
-                app_thread->detach(true);
+                verbprintf(1, "##############Resuming Execution\n");
+                app_thread->continueExecution();
+                verbprintf(1, "###############Signal finalization");
+                kill(_pid, (int) tim::signals::sys_signal::User1);
+                bool status = bpatch->waitForStatusChange();
+                if(status) app_thread->detach(true);
                 verbprintf(1, "###############Finish graceful exit....");
             };
 
