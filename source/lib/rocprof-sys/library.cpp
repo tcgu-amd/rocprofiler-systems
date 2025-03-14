@@ -788,13 +788,13 @@ rocprofsys_finalize_hidden(void)
     // }
 
     ROCPROFSYS_VERBOSE_F(0, "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\n");
-#if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
-    // TODO: option for rocm
-    {
-        ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
-        rocprofiler_sdk::shutdown();
-    }
-#endif
+// #if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+//     // TODO: option for rocm
+//     {
+//         ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
+//         rocprofiler_sdk::shutdown();
+//     }
+// #endif
     ROCPROFSYS_VERBOSE_F(0, "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
     ROCPROFSYS_VERBOSE_F(0, "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK\n");
     ROCPROFSYS_DEBUG_F("Stopping and destroying instrumentation bundles...\n");
