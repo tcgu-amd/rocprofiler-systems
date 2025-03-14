@@ -856,7 +856,7 @@ rocprofsys_finalize_hidden(void)
         causal::sampling::shutdown();
     }
 
-    ROCPROFSYS_VERBOSE_F(0, "4444444444444444444444444444444444444444444\n");
+    ROCPROFSYS_VERBOSE_F(0, "333333333333333333333333333333333333333333\n");
     if(get_use_sampling())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down sampling...\n");
@@ -938,6 +938,8 @@ rocprofsys_finalize_hidden(void)
                                            _perfetto_output_error);
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR\n");
+
     if(_timemory_manager && _timemory_manager != nullptr)
     {
         _timemory_manager->add_metadata([](auto& ar) {
@@ -963,6 +965,7 @@ rocprofsys_finalize_hidden(void)
                                           "rocprofsys", _cfg);
     }
 
+    ROCPROFSYS_VERBOSE_F(0, "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS\n");
     categories::shutdown();
 
     _finalization.stop();
