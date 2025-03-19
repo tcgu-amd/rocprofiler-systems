@@ -2524,6 +2524,7 @@ main(int argc, char** argv)
             exit_callback = [&app_thread, _pid](){
                 verbprintf(1, "##############Gracefully exiting.......\n");
                 verbprintf(1, "##############Stopping Execution\n");
+                detaching = true;
                 app_thread->stopExecution();
                 // app_thread->stopExecution();
                 verbprintf(1, "##############Executing finish codes\n");
@@ -2536,7 +2537,8 @@ main(int argc, char** argv)
                 app_thread->continueExecution();
                 verbprintf(1, "###############Signal finalization");
                 kill(_pid, (int) tim::signals::sys_signal::User1);
-                // sigwait()
+                bool status = bpatch->waitForStatusChange();
+                if(status) app_thread->detach(true);
                 verbprintf(1, "###############Finish graceful exit....");
             };
 
