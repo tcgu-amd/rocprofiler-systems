@@ -1291,7 +1291,7 @@ rocprofiler_configure(uint32_t version, const char* runtime_version, uint32_t pr
         _first = false;
     }
 
-    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true)) return nullptr;
+    // if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true)) return nullptr;
     if(!tim::settings::enabled()) return nullptr;
 
     if(!rocprofsys::config::settings_are_configured() &&
