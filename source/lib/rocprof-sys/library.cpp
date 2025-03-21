@@ -410,7 +410,8 @@ rocprofsys_init_tooling_hidden()
 {
     if(get_env("ROCPROFSYS_MONOCHROME", false, false)) tim::log::monochrome() = true;
 
-    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true))
+    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) || 
+        tim::get_env("ROCPROFSYS_ATTACH", false))
     {
         rocprofsys_init_library_hidden();
         return false;

@@ -625,7 +625,7 @@ extern "C"
             ROCPROFSYS_DL_LOG(
                 2, "%s(%s) ignored :: already initialized and finalized\n", __FUNCTION__,
                 ::rocprofsys::join(::rocprofsys::QuoteStrings{}, ", ", a, b, c).c_str());
-            return;
+        return;
         }
         else if(dl::get_inited() && dl::get_active())
         {
@@ -1522,23 +1522,13 @@ extern "C"
             }
         }
 
-        auto _attach = get_env("ROCPROFSYS_ATTACH", false);
-        ROCPROFSYS_DL_LOG(1, "Launched in pre-attach mode. Preparing application for attachment.\n")
+        auto _mode = get_env("ROCPROFSYS_MODE", get_default_mode());
+        rocprofsys_init(_mode.c_str(),
+                    dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
+                    argv[0]);
 
-        // If in attach mode, do not perform initialization at launch.
-        // Finialization is okay if user appl termniates before detachment.
-        if (_attach){
-            /*Attach mode should be launched with ROCPROFSYS_INIT_TOOLING set to 
-            false to prevent rocprofiler_configure from initailzing tooling on its 
-            own before reaching here. Setting ROCPROFSYS_INIT_TOOLING to true here 
-            to allow tooling initialization with attachment later.*/
-            setenv("ROCPROFSYS_INIT_TOOLING", "true", 1);
-        }else{
-            auto _mode = get_env("ROCPROFSYS_MODE", get_default_mode());
-            rocprofsys_init(_mode.c_str(),
-                        dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
-                        argv[0]);
-        }
+        //Setting attach to false to allow rocprofsys_init_tooling() to be called from runtime
+        setenv("ROCPROFSYS_ATTACH", false, 1)
         int ret = (*::rocprofsys::dl::main_real)(argc, argv, envp);
 
         rocprofsys_pop_trace(basename(argv[0]));
