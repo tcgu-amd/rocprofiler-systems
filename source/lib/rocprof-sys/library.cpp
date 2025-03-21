@@ -140,10 +140,13 @@ attach_detach_handler()
 {
     if (get_state() == State::Active)
     {
+        ROCPROFSYS_VERBOSE_F(1 "Invoked detach procedure\n")
         rocprofsys_finalize();
         return;
     } 
-    if (get_state() < State::Active){
+    if (get_state() < State::Active)
+    {
+        ROCPROFSYS_VERBOSE_F(1 "Invoked attach procedure\n")
         rocprofsys_init_tooling();
         return;
     }
@@ -419,7 +422,7 @@ rocprofsys_init_library_hidden()
     //Initialize attach
     if (tim::get_env("ROCPROFSYS_ATTACH", true))
     {
-        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.")
+        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n")
         config::set_signal_handler(&attach_detach_handler);
     }
 }
