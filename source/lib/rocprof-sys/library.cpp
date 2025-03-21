@@ -140,7 +140,7 @@ attach_detach_handler()
 {
     if (get_state() < State::Active)
     {
-        std::cout << "sjdkolfjas;lkfjasd;klfjasd;" << std::endl();
+        ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE");
         rocprofsys_init_tooling_hidden();
         return;
     }
