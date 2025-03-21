@@ -138,18 +138,12 @@ finalization_handler()
 void
 attach_detach_handler()
 {
-    if (get_state() == State::Active)
-    {
-        ROCPROFSYS_VERBOSE_F(1 "Invoked detach procedure\n");
-        rocprofsys_finalize();
-        return;
-    } 
     if (get_state() < State::Active)
     {
-        ROCPROFSYS_VERBOSE_F(1 "Invoked attach procedure\n");
         rocprofsys_init_tooling();
         return;
     }
+    rocprofsys_finalize();
 }
 auto
 ensure_finalization(bool _static_init = false)
