@@ -140,13 +140,13 @@ attach_detach_handler()
 {
     if (get_state() == State::Active)
     {
-        ROCPROFSYS_VERBOSE_F(1 "Invoked detach procedure\n")
+        ROCPROFSYS_VERBOSE_F(1 "Invoked detach procedure\n");
         rocprofsys_finalize();
         return;
     } 
     if (get_state() < State::Active)
     {
-        ROCPROFSYS_VERBOSE_F(1 "Invoked attach procedure\n")
+        ROCPROFSYS_VERBOSE_F(1 "Invoked attach procedure\n");
         rocprofsys_init_tooling();
         return;
     }
