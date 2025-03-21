@@ -140,7 +140,7 @@ attach_detach_handler()
 {
     if (get_state() < State::Active)
     {
-        ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE");
+        ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE\n");
         tim::set_env("ROCPROFSYS_ATTACH_FALSE", "false", 1); 
         rocprofsys_init_tooling_hidden();
         return;
