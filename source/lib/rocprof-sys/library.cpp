@@ -430,11 +430,11 @@ rocprofsys_init_tooling_hidden()
 {
     if(get_env("ROCPROFSYS_MONOCHROME", false, false)) tim::log::monochrome() = true;
 
-    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) || 
-        tim::get_env("ROCPROFSYS_ATTACH", false))
+    bool _is_attach = tim::get_env("ROCPROFSYS_ATTACH", false);
+    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) || _is_attach)
     {
         rocprofsys_init_library_hidden();
-        ROCPROFSYS_VERBOSE_F(1, "EXITING FROM TOOLING INIT");
+        ROCPROFSYS_VERBOSE_F(1, "EXITING FROM TOOLING INIT\n");
         return false;
     }
 
@@ -443,8 +443,9 @@ rocprofsys_init_tooling_hidden()
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "State is %s...\n",
                                          std::to_string(get_state()).c_str());
-
-    if(get_state() != State::PreInit || get_state() == State::Init || _once) return false;
+    
+    if(!_is_attach && (get_state() != State::PreInit || get_state() == State::Init || _once)) 
+        return false;
     _once = true;
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
