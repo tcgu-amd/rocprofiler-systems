@@ -422,7 +422,7 @@ rocprofsys_init_library_hidden()
     //Initialize attach
     if (tim::get_env("ROCPROFSYS_ATTACH", true))
     {
-        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n")
+        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n");
         config::set_signal_handler(&attach_detach_handler);
     }
 }
