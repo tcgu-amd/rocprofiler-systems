@@ -135,6 +135,7 @@ finalization_handler()
     if(get_state() == State::Active) rocprofsys_finalize();
 }
 
+void
 attach_detach_handler()
 {
     if (get_state() == State::Active)
