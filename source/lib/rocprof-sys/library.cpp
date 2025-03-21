@@ -434,6 +434,7 @@ rocprofsys_init_tooling_hidden()
         tim::get_env("ROCPROFSYS_ATTACH", false))
     {
         rocprofsys_init_library_hidden();
+        ROCPROFSYS_VERBOSE_F(1, "EXITING FROM TOOLING INIT");
         return false;
     }
 
