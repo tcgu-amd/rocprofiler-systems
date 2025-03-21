@@ -1295,12 +1295,12 @@ rocprofiler_configure(uint32_t version, const char* runtime_version, uint32_t pr
     if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) && 
       !tim::get_env("ROCPROFSYS_ATTACH", false)) 
         return nullptr;
-        
+
     if(!tim::settings::enabled()) return nullptr;
 
-    if(!rocprofsys::config::settings_are_configured() &&
-       rocprofsys::get_state() < rocprofsys::State::Active)
-        rocprofsys_init_tooling_hidden();
+    // if(!rocprofsys::config::settings_are_configured() &&
+    //    rocprofsys::get_state() < rocprofsys::State::Active)
+    //     rocprofsys_init_tooling_hidden();
 
     // set the client name
     id->name = "rocprofsys";
