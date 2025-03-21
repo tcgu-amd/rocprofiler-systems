@@ -1170,7 +1170,8 @@ tool_init(rocprofiler_client_finalize_t fini_func, void* user_data)
         rocm_smi::set_state(State::Active);
     }
 
-    start();
+    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+        start();
 
     // no errors
     return 0;
@@ -1291,7 +1292,10 @@ rocprofiler_configure(uint32_t version, const char* runtime_version, uint32_t pr
         _first = false;
     }
 
-    // if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true)) return nullptr;
+    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) && 
+      !tim::get_env("ROCPROFSYS_ATTACH", false)) 
+        return nullptr;
+        
     if(!tim::settings::enabled()) return nullptr;
 
     if(!rocprofsys::config::settings_are_configured() &&

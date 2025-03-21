@@ -560,6 +560,8 @@ rocprofsys_init_tooling_hidden()
     // ends the tracing session
     static auto _ensure_finalization = ensure_finalization();
 
+    rocprofiler_sdk::start();
+
     return true;
 }
 
