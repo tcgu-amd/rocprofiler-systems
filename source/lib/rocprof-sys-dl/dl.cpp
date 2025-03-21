@@ -1528,7 +1528,7 @@ extern "C"
                     argv[0]);
 
         //Setting attach to false to allow rocprofsys_init_tooling() to be called from runtime
-        setenv("ROCPROFSYS_ATTACH", false, 1);
+    setenv("ROCPROFSYS_ATTACH", "false", 1);
         int ret = (*::rocprofsys::dl::main_real)(argc, argv, envp);
 
         rocprofsys_pop_trace(basename(argv[0]));
