@@ -135,6 +135,18 @@ finalization_handler()
     if(get_state() == State::Active) rocprofsys_finalize();
 }
 
+attach_detach_handler()
+{
+    if (get_state() == State::Active)
+    {
+        rocprofsys_finalize();
+        return;
+    } 
+    if (get_state() < State::Active){
+        rocprofsys_init_tooling();
+        return;
+    }
+}
 auto
 ensure_finalization(bool _static_init = false)
 {
@@ -401,6 +413,14 @@ rocprofsys_init_library_hidden()
     } };
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
+
+
+    //Initialize attach
+    if (tim::get_env("ROCPROFSYS_ATTACH", true))
+    {
+        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.")
+        config::set_signal_handler(&attach_detach_handler);
+    }
 }
 
 //======================================================================================//
