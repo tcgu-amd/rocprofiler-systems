@@ -140,7 +140,7 @@ attach_detach_handler()
 {
     if (get_state() < State::Active)
     {
-        rocprofsys_init_tooling();
+        rocprofsys_init_tooling_hidden();
         return;
     }
     rocprofsys_finalize();
