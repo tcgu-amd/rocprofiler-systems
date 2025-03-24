@@ -655,7 +655,7 @@ tool_tracing_buffered(rocprofiler_context_id_t /*context*/,
 {
     if(num_headers == 0 || headers == nullptr) return;
 
-    if (rocprof_sys::get_state() < State::Active) return;
+    if (rocprofsys::get_state() < State::Active) return;
 
     for(size_t i = 0; i < num_headers; ++i)
     {
