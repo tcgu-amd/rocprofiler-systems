@@ -1009,7 +1009,9 @@ rocprofsys_finalize_hidden(void)
         { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Stop },
         [](int) {});
 
-    common::destroy_static_objects();
+    //TODO: Find out why this sometimes causes a segfault
+    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+        common::destroy_static_objects();
 }
 
 //======================================================================================//
