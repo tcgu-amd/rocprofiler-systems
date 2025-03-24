@@ -431,7 +431,7 @@ rocprofsys_init_tooling_hidden()
     if(get_env("ROCPROFSYS_MONOCHROME", false, false)) tim::log::monochrome() = true;
 
     bool _is_attach = tim::get_env("ROCPROFSYS_ATTACH", false);
-    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true) || _is_attach)
+    if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true))
     {
         rocprofsys_init_library_hidden();
         ROCPROFSYS_VERBOSE_F(1, "EXITING FROM TOOLING INIT\n");
@@ -583,7 +583,7 @@ rocprofsys_init_tooling_hidden()
     // ends the tracing session
     static auto _ensure_finalization = ensure_finalization();
 
-    rocprofiler_sdk::start();
+    // rocprofiler_sdk::start();
 
     return true;
 }

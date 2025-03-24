@@ -655,6 +655,8 @@ tool_tracing_buffered(rocprofiler_context_id_t /*context*/,
 {
     if(num_headers == 0 || headers == nullptr) return;
 
+    if (rocprof_sys::get_state() < State::Active) return;
+
     for(size_t i = 0; i < num_headers; ++i)
     {
         auto* header = headers[i];
@@ -1170,8 +1172,8 @@ tool_init(rocprofiler_client_finalize_t fini_func, void* user_data)
         rocm_smi::set_state(State::Active);
     }
 
-    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
-        start();
+    // if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+    start();
 
     // no errors
     return 0;
