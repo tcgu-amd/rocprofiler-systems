@@ -450,10 +450,10 @@ rocprofsys_init_tooling_hidden()
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    ROCPROFSYS_CONDITIONAL_THROW(
-        get_state() == State::Init,
-        "%s called after rocprofsys_init_library() was explicitly called",
-        ROCPROFSYS_FUNCTION);
+    // ROCPROFSYS_CONDITIONAL_THROW(
+    //     get_state() == State::Init,
+    //     "%s called after rocprofsys_init_library() was explicitly called",
+    //     ROCPROFSYS_FUNCTION);
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(get_verbose_env() >= 0,
                                          "Instrumentation mode: %s\n",
