@@ -498,7 +498,7 @@ rocprofsys_init_tooling_hidden()
         get_main_bundle()->start();
         ROCPROFSYS_DEBUG_F("State: %s -> State::Active\n",
                            std::to_string(get_state()).c_str());
-        if (tim::get_env("ROCPROFSYS_ATTACH", false))
+        if (!tim::get_env("ROCPROFSYS_ATTACH", false))
             set_state(State::Active);  // set to active as very last operation
     } };
 
