@@ -1522,13 +1522,19 @@ extern "C"
             }
         }
 
+        auto _attach = get_env("ROCPROFSYS_ATTACH", false);
+
+        //Disable tooling initalization in attach mode.
+        if (_attach)
+            setenv("ROCPROFSYS_INIT_TOOLING", "false", 1);
         auto _mode = get_env("ROCPROFSYS_MODE", get_default_mode());
         rocprofsys_init(_mode.c_str(),
                     dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
                     argv[0]);
 
-        //Setting attach to false to allow rocprofsys_init_tooling() to be called from runtime
-    setenv("ROCPROFSYS_ATTACH", "false", 1);
+        //Enable tooling initialization during runtime. 
+        if (_attach)
+            setenv("ROCPROFSYS_INIT_TOOLING", "true", 1);
         int ret = (*::rocprofsys::dl::main_real)(argc, argv, envp);
 
         rocprofsys_pop_trace(basename(argv[0]));

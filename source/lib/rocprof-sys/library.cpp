@@ -141,7 +141,7 @@ attach_detach_handler()
     if (get_state() < State::Active)
     {
         ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE\n");
-        set_state(State::Active);
+        rocprofsys_init_tooling_hidden();
         return;
     }
     rocprofsys_finalize();
@@ -498,8 +498,8 @@ rocprofsys_init_tooling_hidden()
         get_main_bundle()->start();
         ROCPROFSYS_DEBUG_F("State: %s -> State::Active\n",
                            std::to_string(get_state()).c_str());
-        if (!tim::get_env("ROCPROFSYS_ATTACH", false))
-            set_state(State::Active);  // set to active as very last operation
+        //if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+        set_state(State::Active);  // set to active as very last operation
     } };
 
     ROCPROFSYS_SCOPED_SAMPLING_ON_CHILD_THREADS(false);
