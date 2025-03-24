@@ -141,7 +141,7 @@ attach_detach_handler()
     if (get_state() < State::Active)
     {
         ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE\n");
-        set_state(State::Active)
+        set_state(State::Active);
         return;
     }
     rocprofsys_finalize();
@@ -498,7 +498,7 @@ rocprofsys_init_tooling_hidden()
         get_main_bundle()->start();
         ROCPROFSYS_DEBUG_F("State: %s -> State::Active\n",
                            std::to_string(get_state()).c_str());
-        if (!_is_attach)
+        if (tim::get_env("ROCPROFSYS_ATTACH", false))
             set_state(State::Active);  // set to active as very last operation
     } };
 
