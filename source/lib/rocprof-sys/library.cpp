@@ -443,7 +443,7 @@ rocprofsys_init_tooling_hidden()
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "State is %s...\n",
                                          std::to_string(get_state()).c_str());
     
-    if(!_is_attach && (get_state() >= State::Active || _once)) 
+    if (get_state() >= State::Active || _once) 
         return false;
     _once = true;
 
