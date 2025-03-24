@@ -1012,6 +1012,8 @@ rocprofsys_finalize_hidden(void)
     //TODO: Find out why this sometimes causes a segfault
     if (!tim::get_env("ROCPROFSYS_ATTACH", false))
         common::destroy_static_objects();
+
+    ROCPROFSYS_VERBOSE_F(0, "Ending finalization\n");
 }
 
 //======================================================================================//
