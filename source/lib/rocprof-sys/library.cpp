@@ -135,6 +135,18 @@ finalization_handler()
     if(get_state() == State::Active) rocprofsys_finalize();
 }
 
+//Tim: Handles attach/detach. This replaces finalization handler if dl in initialized in attach mode. 
+void
+attach_detach_handler()
+{
+    if (get_state() < State::Active)
+    {
+        ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE\n");
+        rocprofsys_init_tooling_hidden();
+        return;
+    }
+    rocprofsys_finalize();
+}
 auto
 ensure_finalization(bool _static_init = false)
 {
@@ -401,6 +413,14 @@ rocprofsys_init_library_hidden()
     } };
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
+
+    //Tim: This sets default signal handler to attach_detach_handler.
+    //Setting it here will prevent finalization_handler from being set later.
+    if (tim::get_env("ROCPROFSYS_ATTACH", true))
+    {
+        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n");
+        config::set_signal_handler(&attach_detach_handler);
+    }
 }
 
 //======================================================================================//
@@ -413,7 +433,7 @@ rocprofsys_init_tooling_hidden()
     if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true))
     {
         rocprofsys_init_library_hidden();
-        return false;
+                return false;
     }
 
     static bool _once       = false;
@@ -421,16 +441,19 @@ rocprofsys_init_tooling_hidden()
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "State is %s...\n",
                                          std::to_string(get_state()).c_str());
-
-    if(get_state() != State::PreInit || get_state() == State::Init || _once) return false;
+    
+    //Tim: Allows this function to be called after rocprofsys_init_library_hidden();
+    if (get_state() >= State::Active || _once) 
+        return false;
     _once = true;
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    ROCPROFSYS_CONDITIONAL_THROW(
-        get_state() == State::Init,
-        "%s called after rocprofsys_init_library() was explicitly called",
-        ROCPROFSYS_FUNCTION);
+    //Tim: Allows this function to be called after rocprofsys_init_library_hidden();
+    // ROCPROFSYS_CONDITIONAL_THROW(
+    //     get_state() == State::Init,
+    //     "%s called after rocprofsys_init_library() was explicitly called",
+    //     ROCPROFSYS_FUNCTION);
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(get_verbose_env() >= 0,
                                          "Instrumentation mode: %s\n",
@@ -676,6 +699,7 @@ rocprofsys_finalize_hidden(void)
     // disable initialization callback
     threading::remove_callback(&ensure_initialization);
 
+    bool _is_attach = tim::get_env("ROCPROFSYS_ATTACH", false);
     bool _is_child = is_child_process();
 
     set_thread_state(ThreadState::Completed);
@@ -791,7 +815,9 @@ rocprofsys_finalize_hidden(void)
     // TODO: option for rocm
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
-        rocprofiler_sdk::shutdown();
+        //Tim: only shutdown rocprofiler_sdk in non-attach mode, otherwise we will run into segfault
+        if (!_is_attach)
+            rocprofiler_sdk::shutdown();
     }
 #endif
 
@@ -984,7 +1010,10 @@ rocprofsys_finalize_hidden(void)
         { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Stop },
         [](int) {});
 
-    common::destroy_static_objects();
+    //Tim: Prevent segfault in attach mode. 
+    //TODO: Find out why this sometimes causes a segfault
+    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+        common::destroy_static_objects();
 }
 
 //======================================================================================//
