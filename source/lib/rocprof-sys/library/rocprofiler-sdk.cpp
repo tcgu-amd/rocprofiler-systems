@@ -655,6 +655,9 @@ tool_tracing_buffered(rocprofiler_context_id_t /*context*/,
 {
     if(num_headers == 0 || headers == nullptr) return;
 
+    //Tim: Suppress actually doing work here until attach time, when State will be set to Active
+    if (rocprofsys::get_state() < State::Active) return;
+
     for(size_t i = 0; i < num_headers; ++i)
     {
         auto* header = headers[i];
@@ -1293,9 +1296,10 @@ rocprofiler_configure(uint32_t version, const char* runtime_version, uint32_t pr
     if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true)) return nullptr;
     if(!tim::settings::enabled()) return nullptr;
 
-    if(!rocprofsys::config::settings_are_configured() &&
-       rocprofsys::get_state() < rocprofsys::State::Active)
-        rocprofsys_init_tooling_hidden();
+    //Tim: Removing this block because tooling shouldn't been initialized here. 
+    // if(!rocprofsys::config::settings_are_configured() &&
+    //    rocprofsys::get_state() < rocprofsys::State::Active)
+    //     rocprofsys_init_tooling_hidden();
 
     if(!rocprofsys::config::get_use_rocm())
     {

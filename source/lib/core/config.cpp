@@ -1191,9 +1191,24 @@ rocprofsys_exit_action(int nsig)
                                 tim::signals::sigmask_scope::process);
     ROCPROFSYS_BASIC_PRINT("Finalizing after signal %i :: %s\n", nsig,
                            signal_settings::str(static_cast<sys_signal>(nsig)).c_str());
+    
+    //Tim: Handles the case where State is never active i.e. attaching never occured. 
+    if (get_state() == State::Active)
+    {
+        auto _handler = get_signal_handler().load();
+        if(_handler) (*_handler)();
+    }
+    kill(process::get_id(), nsig);
+}
+
+//Tim: This handles signals for triggering attach/detach. It prevents the process from being killed at the end.
+void
+rocprofsys_attach_detach_action(int nsig, siginfo_t *siginfo, void *data)
+{
+    tim::signals::block_signals(get_sampling_signals(),
+                                tim::signals::sigmask_scope::process);
     auto _handler = get_signal_handler().load();
     if(_handler) (*_handler)();
-    kill(process::get_id(), nsig);
 }
 
 void
@@ -1254,6 +1269,7 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
             signal_settings::enable(itr);
         if(_ignore_dyninst_trampoline)
             signal_settings::disable(static_cast<sys_signal>(_dyninst_trampoline_signal));
+
         auto enabled_signals = signal_settings::get_enabled();
         tim::signals::enable_signal_detection(enabled_signals);
     }
@@ -1266,6 +1282,15 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
         _action.sa_handler = rocprofsys_trampoline_handler;
         sigaction(_dyninst_trampoline_signal, &_action, nullptr);
     }
+
+    // Set up custom signals handlers for detaching.
+    // Avoid using timeory's signal handler because it kills the process. 
+    int DETACH_SIG = 10; //SIGUSR1
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_sigaction = rocprofsys_attach_detach_action;
+    sa.sa_flags=SA_SIGINFO;
+    sigaction(DETACH_SIG, &sa, nullptr);
 }
 
 bool
