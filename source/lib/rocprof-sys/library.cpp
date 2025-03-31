@@ -146,7 +146,7 @@ attach_detach_handler()
         rocprofsys_init_tooling_hidden();
         return;
     }
-    rocprofsys_finalize();
+    rocprofsys_finalize_hidden();
 }
 auto
 ensure_finalization(bool _static_init = false)
@@ -415,7 +415,6 @@ rocprofsys_init_library_hidden()
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
     //Tim: This sets default signal handler to attach_detach_handler.
-    //Setting it here will prevent finalization_handler from being set later.
     if (tim::get_env("ROCPROFSYS_ATTACH", true))
     {
         ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n");
@@ -449,6 +448,7 @@ rocprofsys_init_library_hidden_with_rccl(bool postinit)
 extern "C" bool
 rocprofsys_init_tooling_hidden(bool postinit)
 {
+    bool _is_attach = tim::get_env("ROCPROFSYS_ATTACH", false);
     if(get_env("ROCPROFSYS_MONOCHROME", false, false)) tim::log::monochrome() = true;
 
     if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true))
@@ -550,10 +550,13 @@ rocprofsys_init_tooling_hidden(bool postinit)
     if(get_use_sampling()) sampling::block_signals();
 
     // perfetto initialization
-    if(get_use_perfetto())
+    //Tim: Perfetto should only need to be setup once. 
+    static bool _perfetto_once=false;
+    if(!_perfetto_once && get_use_perfetto())
     {
         ROCPROFSYS_VERBOSE_F(1, "Setting up Perfetto...\n");
         rocprofsys::perfetto::setup();
+        _perfetto_once = true;
     }
 
     tasking::setup();
@@ -603,6 +606,9 @@ rocprofsys_init_tooling_hidden(bool postinit)
 
     categories::setup();
 
+#if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+    rocprofiler_sdk::start();
+#endif
     // if static objects are destroyed in the inverse order of when they are
     // created this should ensure that finalization is called before perfetto
     // ends the tracing session
@@ -840,9 +846,16 @@ rocprofsys_finalize_hidden(void)
     if(get_use_rocm())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
-        //Tim: only shutdown rocprofiler_sdk in non-attach mode, otherwise we will run into segfault
-        if (!_is_attach)
+        //Tim: Stop instead of shutting down rocprofiler-sdk in attach mode. 
+        if (_is_attach)
+        {
+            rocprofiler_sdk::flush();
+            rocprofiler_sdk::stop();
+        }
+        else
+        {
             rocprofiler_sdk::shutdown();
+        }
     }
 #endif
 
@@ -1027,7 +1040,9 @@ rocprofsys_finalize_hidden(void)
             .c_str());
 
     debug::close_file();
-    config::finalize();
+    //Tim:Do not finalize config if in attach mode to allow subsequent attach
+    if (!_is_attach)
+        config::finalize();
 
     ROCPROFSYS_VERBOSE_F(0, "Finalized: %s\n", _finalization.as_string().c_str());
 
@@ -1037,7 +1052,7 @@ rocprofsys_finalize_hidden(void)
 
     //Tim: Prevent segfault in attach mode. 
     //TODO: Find out why this sometimes causes a segfault
-    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
+    if (!_is_attach)
         common::destroy_static_objects();
 }
 
