@@ -52,6 +52,9 @@ void
 start();
 
 void
+flush();
+
+void
 stop();
 
 std::vector<hardware_counter_info>
