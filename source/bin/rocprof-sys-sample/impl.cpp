@@ -343,6 +343,15 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     %{INDENT}%- discard     : new data is ignored
     %{INDENT}%- ring_buffer : new data overwrites oldest data)";
 
+    const auto* _pre_attach_desc =
+        R"(Launch the application in pre-attach mode. This mode sets up and configures the profiling tools without initiating them. 
+           Applications running in pre-attach mode can later be profiled by executing rocprof-sys-sample with the --attach option. 
+           Please note that using pre-attach mode may negatively impact application performance. The extent of this impact varies based 
+           on the specific profiling configuration and the nature of the application.)";
+
+    const auto* _attach_desc =
+        R"(Attach to a running process launched in pre-attach mode. )"; 
+
     parser.set_use_color(true);
     parser.enable_help();
     parser.enable_version("rocprof-sys-sample", ROCPROFSYS_ARGPARSE_VERSION_INFO);
@@ -823,6 +832,23 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
             update_env(_env, "HSA_ENABLE_INTERRUPT", p.get<int>("hsa-interrupt"));
         });
 
+    parser.add_argument({ "--pre-attach" }, _pre_attach_desc)
+        .count(0)
+        .action([&](parser_t& p) {
+            update_env(_env, "ROCPROFSYS_ATTACH", true);
+        });
+
+    parser.add_argument({ "--attach" }, _attach_desc)
+        .count(1)
+        .dtype("pid")
+        .action([&](parser_t& p) {
+            auto _v = p.get<std::deque<std::string>>("attach");
+            if(!_v.empty())
+            {
+                *(get_attach_pid()) = std::stoi(_v.front());
+                _v.pop_front();
+            }
+        });
     parser.end_group();
 
     auto _inpv = std::vector<char*>{};
@@ -860,4 +886,22 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     free(_omni_libpath);
 
     return _outv;
+}
+
+int* 
+get_attach_pid()
+{
+    static int _v = -1;
+    return &_v;
+}
+
+int 
+attach(int _pid)
+{
+    kill(_pid, 10);
+    stream(std::cout, color::info())
+        << "Entering into attach mode. Press any key to detach.\n";
+    std::cin.get();
+    kill(_pid, 10);
+    return 0;
 }

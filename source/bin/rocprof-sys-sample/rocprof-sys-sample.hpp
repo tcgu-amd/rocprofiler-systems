@@ -59,3 +59,9 @@ remove_env(std::vector<char*>& _environ, std::string_view _env_var);
 
 std::vector<char*>
 parse_args(int argc, char** argv, std::vector<char*>& envp);
+
+int*
+get_attach_pid();
+
+int 
+attach(int _pid);
