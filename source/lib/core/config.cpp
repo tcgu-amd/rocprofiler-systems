@@ -1204,7 +1204,7 @@ rocprofsys_exit_action(int nsig)
 // Tim: This handles signals for triggering attach/detach. It prevents the process from
 // being killed at the end.
 void
-rocprofsys_attach_detach_action(int nsig, siginfo_t* siginfo, void* data)
+rocprofsys_attach_detach_action(int, siginfo_t*, void*)
 {
     if(!tim::get_env("ROCPROFSYS_ATTACH", false))
     {
