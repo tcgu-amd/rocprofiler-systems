@@ -350,7 +350,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
            on the specific profiling configuration and the nature of the application.)";
 
     const auto* _attach_desc =
-        R"(Attach to a running process launched in pre-attach mode. )"; 
+        R"(Attach to a running process launched in pre-attach mode. )";
 
     parser.set_use_color(true);
     parser.enable_help();
@@ -834,9 +834,7 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
 
     parser.add_argument({ "--pre-attach" }, _pre_attach_desc)
         .count(0)
-        .action([&](parser_t& p) {
-            update_env(_env, "ROCPROFSYS_ATTACH", true);
-        });
+        .action([&](parser_t& p) { update_env(_env, "ROCPROFSYS_ATTACH", true); });
 
     parser.add_argument({ "--attach" }, _attach_desc)
         .count(1)
@@ -888,14 +886,14 @@ parse_args(int argc, char** argv, std::vector<char*>& _env)
     return _outv;
 }
 
-int* 
+int*
 get_attach_pid()
 {
     static int _v = -1;
     return &_v;
 }
 
-int 
+int
 attach(int _pid)
 {
     kill(_pid, 10);

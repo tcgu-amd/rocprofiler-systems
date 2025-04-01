@@ -53,8 +53,7 @@ main(int argc, char** argv)
             _argv.emplace_back(argv[i]);
     }
 
-    if (int _pid = *(get_attach_pid());
-        _pid > 0)
+    if(int _pid = *(get_attach_pid()); _pid > 0)
     {
         return attach(_pid);
     }

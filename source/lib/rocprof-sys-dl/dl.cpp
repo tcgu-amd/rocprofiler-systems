@@ -625,7 +625,7 @@ extern "C"
             ROCPROFSYS_DL_LOG(
                 2, "%s(%s) ignored :: already initialized and finalized\n", __FUNCTION__,
                 ::rocprofsys::join(::rocprofsys::QuoteStrings{}, ", ", a, b, c).c_str());
-        return;
+            return;
         }
         else if(dl::get_inited() && dl::get_active())
         {
@@ -1524,17 +1524,15 @@ extern "C"
 
         auto _attach = get_env("ROCPROFSYS_ATTACH", false);
 
-        //Tim: Disable tooling initalization in attach mode.
-        if (_attach)
-            setenv("ROCPROFSYS_INIT_TOOLING", "false", 1);
+        // Tim: Disable tooling initalization in attach mode.
+        if(_attach) setenv("ROCPROFSYS_INIT_TOOLING", "false", 1);
         auto _mode = get_env("ROCPROFSYS_MODE", get_default_mode());
         rocprofsys_init(_mode.c_str(),
-                    dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
-                    argv[0]);
+                        dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
+                        argv[0]);
 
-        //Tim: Enable tooling initialization during runtime. 
-        if (_attach)
-            setenv("ROCPROFSYS_INIT_TOOLING", "true", 1);
+        // Tim: Enable tooling initialization during runtime.
+        if(_attach) setenv("ROCPROFSYS_INIT_TOOLING", "true", 1);
         int ret = (*::rocprofsys::dl::main_real)(argc, argv, envp);
 
         rocprofsys_pop_trace(basename(argv[0]));

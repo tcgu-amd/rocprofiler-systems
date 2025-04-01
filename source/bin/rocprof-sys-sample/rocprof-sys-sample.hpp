@@ -63,5 +63,5 @@ parse_args(int argc, char** argv, std::vector<char*>& envp);
 int*
 get_attach_pid();
 
-int 
+int
 attach(int _pid);

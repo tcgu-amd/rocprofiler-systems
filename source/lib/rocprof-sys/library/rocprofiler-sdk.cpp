@@ -655,8 +655,9 @@ tool_tracing_buffered(rocprofiler_context_id_t /*context*/,
 {
     if(num_headers == 0 || headers == nullptr) return;
 
-    //Tim: Suppress actually doing work here until attach time, when State will be set to Active
-    if (rocprofsys::get_state() < State::Active) return;
+    // Tim: Suppress actually doing work here until attach time, when State will be set to
+    // Active
+    if(rocprofsys::get_state() < State::Active) return;
 
     for(size_t i = 0; i < num_headers; ++i)
     {
@@ -1013,15 +1014,15 @@ tool_init(rocprofiler_client_finalize_t fini_func, void* user_data)
 
     ROCPROFILER_CALL(rocprofiler_create_context(&_data->primary_ctx));
 
-    //Tim: Create a context for code objects
-    auto code_obj_ctx = rocprofiler_context_id_t{0};
+    // Tim: Create a context for code objects
+    auto code_obj_ctx = rocprofiler_context_id_t{ 0 };
     ROCPROFILER_CALL(rocprofiler_create_context(&code_obj_ctx));
 
     ROCPROFILER_CALL(rocprofiler_configure_callback_tracing_service(
         code_obj_ctx, ROCPROFILER_CALLBACK_TRACING_CODE_OBJECT, nullptr, 0,
         tool_code_object_callback, _data));
-    
-    //Tim: Start the context for code object
+
+    // Tim: Start the context for code object
     ROCPROFILER_CALL(rocprofiler_start_context(code_obj_ctx));
 
     for(auto itr : {
@@ -1162,9 +1163,8 @@ tool_init(rocprofiler_client_finalize_t fini_func, void* user_data)
         amd_smi::set_state(State::Active);
     }
 
-    //Tim: Do not start if in attach mode
-    if (!tim::get_env("ROCPROFSYS_ATTACH", false))
-        start();
+    // Tim: Do not start if in attach mode
+    if(!tim::get_env("ROCPROFSYS_ATTACH", false)) start();
 
     // no errors
     return 0;
@@ -1242,7 +1242,7 @@ start()
     }
 }
 
-//Tim: Expose flush for external access.
+// Tim: Expose flush for external access.
 void
 flush()
 {
@@ -1306,7 +1306,7 @@ rocprofiler_configure(uint32_t version, const char* runtime_version, uint32_t pr
     if(!tim::get_env("ROCPROFSYS_INIT_TOOLING", true)) return nullptr;
     if(!tim::settings::enabled()) return nullptr;
 
-    //Tim: Removing this block because tooling shouldn't been initialized here. 
+    // Tim: Removing this block because tooling shouldn't been initialized here.
     // if(!rocprofsys::config::settings_are_configured() &&
     //    rocprofsys::get_state() < rocprofsys::State::Active)
     //     rocprofsys_init_tooling_hidden();

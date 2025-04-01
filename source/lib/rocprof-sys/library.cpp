@@ -136,11 +136,12 @@ finalization_handler()
     if(get_state() == State::Active) rocprofsys_finalize();
 }
 
-//Tim: Handles attach/detach. This replaces finalization handler if dl in initialized in attach mode. 
+// Tim: Handles attach/detach. This replaces finalization handler if dl in initialized in
+// attach mode.
 void
 attach_detach_handler()
 {
-    if (get_state() < State::Active)
+    if(get_state() < State::Active)
     {
         ROCPROFSYS_VERBOSE_F(1, "ATTACH ACTIVE\n");
         rocprofsys_init_tooling_hidden();
@@ -414,8 +415,8 @@ rocprofsys_init_library_hidden()
     } };
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
-    //Tim: This sets default signal handler to attach_detach_handler.
-    if (tim::get_env("ROCPROFSYS_ATTACH", true))
+    // Tim: This sets default signal handler to attach_detach_handler.
+    if(tim::get_env("ROCPROFSYS_ATTACH", true))
     {
         ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n");
         config::set_signal_handler(&attach_detach_handler);
@@ -469,18 +470,19 @@ rocprofsys_init_tooling_hidden(bool postinit)
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "State is %s...\n",
                                          std::to_string(get_state()).c_str());
-    if (_is_attach)
-    if(get_state() != State::PreInit || get_state() == State::Init || _once)
-    {
-        rccl_setup(postinit);
-        if (!tim::get_env("ROCPROFSYS_ATTACH", false) || get_state() >= State::Active || _once) 
-            return false;
-    }
+    if(_is_attach)
+        if(get_state() != State::PreInit || get_state() == State::Init || _once)
+        {
+            rccl_setup(postinit);
+            if(!tim::get_env("ROCPROFSYS_ATTACH", false) ||
+               get_state() >= State::Active || _once)
+                return false;
+        }
     _once = true;
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
 
-    //Tim: Allows this function to be called after rocprofsys_init_library_hidden();
+    // Tim: Allows this function to be called after rocprofsys_init_library_hidden();
     // ROCPROFSYS_CONDITIONAL_THROW(
     //     get_state() == State::Init,
     //     "%s called after rocprofsys_init_library() was explicitly called",
@@ -550,8 +552,8 @@ rocprofsys_init_tooling_hidden(bool postinit)
     if(get_use_sampling()) sampling::block_signals();
 
     // perfetto initialization
-    //Tim: Perfetto should only need to be setup once. 
-    static bool _perfetto_once=false;
+    // Tim: Perfetto should only need to be setup once.
+    static bool _perfetto_once = false;
     if(!_perfetto_once && get_use_perfetto())
     {
         ROCPROFSYS_VERBOSE_F(1, "Setting up Perfetto...\n");
@@ -731,7 +733,7 @@ rocprofsys_finalize_hidden(void)
     threading::remove_callback(&ensure_initialization);
 
     bool _is_attach = tim::get_env("ROCPROFSYS_ATTACH", false);
-    bool _is_child = is_child_process();
+    bool _is_child  = is_child_process();
 
     set_thread_state(ThreadState::Completed);
 
@@ -846,8 +848,8 @@ rocprofsys_finalize_hidden(void)
     if(get_use_rocm())
     {
         ROCPROFSYS_VERBOSE_F(1, "Shutting down ROCm...\n");
-        //Tim: Stop instead of shutting down rocprofiler-sdk in attach mode. 
-        if (_is_attach)
+        // Tim: Stop instead of shutting down rocprofiler-sdk in attach mode.
+        if(_is_attach)
         {
             rocprofiler_sdk::flush();
             rocprofiler_sdk::stop();
@@ -1040,9 +1042,8 @@ rocprofsys_finalize_hidden(void)
             .c_str());
 
     debug::close_file();
-    //Tim:Do not finalize config if in attach mode to allow subsequent attach
-    if (!_is_attach)
-        config::finalize();
+    // Tim:Do not finalize config if in attach mode to allow subsequent attach
+    if(!_is_attach) config::finalize();
 
     ROCPROFSYS_VERBOSE_F(0, "Finalized: %s\n", _finalization.as_string().c_str());
 
@@ -1050,10 +1051,9 @@ rocprofsys_finalize_hidden(void)
         { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Stop },
         [](int) {});
 
-    //Tim: Prevent segfault in attach mode. 
-    //TODO: Find out why this sometimes causes a segfault
-    if (!_is_attach)
-        common::destroy_static_objects();
+    // Tim: Prevent segfault in attach mode.
+    // TODO: Find out why this sometimes causes a segfault
+    if(!_is_attach) common::destroy_static_objects();
 }
 
 //======================================================================================//
