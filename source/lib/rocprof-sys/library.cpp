@@ -154,6 +154,9 @@ ensure_finalization(bool _static_init = false)
 {
     if(config::set_signal_handler(nullptr) == nullptr)
         config::set_signal_handler(&finalization_handler);
+    
+    if(config::set_attach_signal_handler(nullptr) == nullptr)
+        config::set_signal_handler(&attach_detach_handler);
 
     if(_static_init)
     {
@@ -415,12 +418,6 @@ rocprofsys_init_library_hidden()
     } };
 
     ROCPROFSYS_CONDITIONAL_BASIC_PRINT_F(_debug_init, "\n");
-    // Tim: This sets default signal handler to attach_detach_handler.
-    if(tim::get_env("ROCPROFSYS_ATTACH", true))
-    {
-        ROCPROFSYS_VERBOSE_F(1, "Initializing rocprof-sys in attach mode.\n");
-        config::set_signal_handler(&attach_detach_handler);
-    }
 }
 
 static void

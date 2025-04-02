@@ -48,6 +48,8 @@ using signal_handler_t = void (*)(void);
 // if arg is non-null, returns replaced signal handler
 signal_handler_t set_signal_handler(signal_handler_t);
 
+signal_handler_t set_attach_signal_handler(signal_handler_t);
+
 bool
 settings_are_configured() ROCPROFSYS_HOT;
 
