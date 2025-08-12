@@ -27,6 +27,8 @@
 #include "lib/rocprofiler-sdk/hsa/agent_cache.hpp"
 #include "lib/rocprofiler-sdk/registration.hpp"
 
+#include "lib/rocprofiler-sdk-prestore/table.hpp"
+
 #include <rocprofiler-sdk/fwd.h>
 #include <memory>
 
@@ -67,7 +69,7 @@ create_queue(hsa_agent_t        agent,
                 serializer.add_queue(queue, *new_queue);
             });
             controller->add_queue(*queue, std::move(new_queue));
-
+            ROCP_INFO << "created queue for HSA agent handle " << agent.handle;
             return HSA_STATUS_SUCCESS;
         }
     }
@@ -482,3 +484,77 @@ queue_controller_fini()
 }
 }  // namespace hsa
 }  // namespace rocprofiler
+
+ROCPROFILER_EXTERN_C_INIT
+
+int
+rocprofiler_load_prestore_queues(void* incoming_table)
+{
+    if(!incoming_table)
+    {
+        ROCP_ERROR << "incoming table is nullptr";
+        return ROCPROFILER_STATUS_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t incoming_version = *(reinterpret_cast<uint32_t*>(incoming_table));
+
+    if(incoming_version != ROCPROFILER_PRESTORE_TABLE_CURRENT_VERSION)
+    {
+        ROCP_ERROR << "incoming table is blank or bad version";
+        return ROCPROFILER_STATUS_ERROR_INVALID_ARGUMENT;
+    }
+
+    auto qc             = rocprofiler::hsa::get_queue_controller();
+    auto prestore_table = reinterpret_cast<rocprofiler_prestore_dispatch_table_t*>(incoming_table);
+    std::vector<rocprofiler::prestore::queue_prestore_export_t> exported_queues;
+    uint64_t                                                    exported_queues_count;
+
+    ROCP_FATAL_IF(prestore_table->rocprofiler_prestore_export_all_queues(
+                      nullptr, &exported_queues_count) != 0);
+    exported_queues.resize(exported_queues_count);
+    ROCP_FATAL_IF(prestore_table->rocprofiler_prestore_export_all_queues(
+                      exported_queues.data(), &exported_queues_count) != 0);
+
+    ROCP_INFO << "Got " << exported_queues_count << " queues from the prestore library";
+    for(uint64_t iter = 0; iter < exported_queues.size(); ++iter)
+    {
+        bool registration_consumed = false;
+        auto qr                    = exported_queues[iter];
+        auto agent                 = qr.agent;
+
+        for(const auto& [_, agent_info] : qc->get_supported_agents())
+        {
+            if(agent_info.get_hsa_agent().handle == agent.handle)
+            {
+                auto set_write_interceptor = [&qr, &prestore_table](write_interceptor_t wi,
+                                                                    void*               data) {
+                    prestore_table->rocprofiler_prestore_set_write_interceptor(qr.queue, wi, data);
+                };
+
+                hsa_queue_t* queue = qr.queue;
+
+                auto new_queue = std::make_unique<rocprofiler::hsa::Queue>(agent_info,
+                                                                           qc->get_core_table(),
+                                                                           qc->get_ext_table(),
+                                                                           queue,
+                                                                           set_write_interceptor);
+
+                qc->serializer(new_queue.get()).wlock([&](auto& serializer) {
+                    serializer.add_queue(&queue, *new_queue);
+                });
+                qc->add_queue(queue, std::move(new_queue));
+                registration_consumed = true;
+                ROCP_INFO << "Adding queue from queue registration for HSA agent handle "
+                          << agent.handle;
+                break;
+            }
+        }
+        if(!registration_consumed)
+        {
+            ROCP_FATAL << "Could not find agent " << agent.handle << " for queue registration";
+        }
+    }
+    return ROCPROFILER_STATUS_SUCCESS;
+}
+
+ROCPROFILER_EXTERN_C_FINI

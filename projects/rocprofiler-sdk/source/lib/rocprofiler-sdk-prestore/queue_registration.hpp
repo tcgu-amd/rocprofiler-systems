@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
+// Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,44 @@
 
 #pragma once
 
-#include "lib/rocprofiler-sdk/code_object/hsa/code_object.hpp"
-#include "lib/rocprofiler-sdk/code_object/hsa/kernel_symbol.hpp"
+#include "lib/rocprofiler-sdk/hsa/hsa.hpp"
 
+#include <hsa/hsa.h>
 #include <hsa/hsa_api_trace.h>
+#include <hsa/hsa_ext_amd.h>
 
 #include <cstdint>
-#include <functional>
-#include <vector>
 
-ROCPROFILER_EXTERN_C_INIT
-// Hidden function used to load all previously captured code objects after an attachment.
-// Takes a dispatch table of prestore functions usually provided by rocprofiler_register.
-int
-rocprofiler_load_prestore_code_objects(void* incoming_table) ROCPROFILER_API;
-ROCPROFILER_EXTERN_C_FINI
+using hsa_amd_queue_intercept_packet_writer_t = void (*)(const void*, uint64_t);
+using write_interceptor_t =
+    void (*)(const void*, uint64_t, uint64_t, void*, hsa_amd_queue_intercept_packet_writer_t);
 
 namespace rocprofiler
 {
-namespace code_object
+namespace prestore
 {
-using code_object_array_t    = std::vector<std::unique_ptr<hsa::code_object>>;
-using code_object_iterator_t = std::function<void(const hsa::code_object&)>;
 
-const char*
-name_by_id(uint32_t id);
-
-uint32_t
-id_by_name(const char* name);
-
-std::vector<const char*>
-get_names();
-
-std::vector<uint32_t>
-get_ids();
-
-uint64_t
-get_kernel_id(uint64_t kernel_object);
+struct queue_prestore_export_t
+{
+    hsa_agent_t  agent;
+    hsa_queue_t* queue;
+};
 
 void
-iterate_loaded_code_objects(code_object_iterator_t&& func);
+queue_registration_init(HsaApiTable* table);
 
-void
-initialize(HsaApiTable* table);
-
-void
-initialize(HipCompilerDispatchTable* table);
-
-void
-finalize();
-}  // namespace code_object
+}  // namespace prestore
 }  // namespace rocprofiler
+
+ROCPROFILER_EXTERN_C_INIT
+
+int
+rocprofiler_prestore_export_all_queues(rocprofiler::prestore::queue_prestore_export_t* queues,
+                                       uint64_t* num_queues) ROCPROFILER_API;
+
+int
+rocprofiler_prestore_set_write_interceptor(hsa_queue_t*        queue,
+                                           write_interceptor_t func,
+                                           void*               data) ROCPROFILER_API;
+
+ROCPROFILER_EXTERN_C_FINI

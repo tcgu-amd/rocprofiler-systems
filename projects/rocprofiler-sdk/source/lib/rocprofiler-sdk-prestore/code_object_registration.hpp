@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
+// Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,54 +22,27 @@
 
 #pragma once
 
-#include "lib/rocprofiler-sdk/code_object/hsa/code_object.hpp"
-#include "lib/rocprofiler-sdk/code_object/hsa/kernel_symbol.hpp"
+#include "lib/rocprofiler-sdk/hsa/hsa.hpp"
 
-#include <hsa/hsa_api_trace.h>
+#include <hsa/hsa.h>
 
 #include <cstdint>
-#include <functional>
-#include <vector>
 
 ROCPROFILER_EXTERN_C_INIT
-// Hidden function used to load all previously captured code objects after an attachment.
-// Takes a dispatch table of prestore functions usually provided by rocprofiler_register.
+
 int
-rocprofiler_load_prestore_code_objects(void* incoming_table) ROCPROFILER_API;
+rocprofiler_prestore_export_all_code_objects(hsa_executable_t* executables,
+                                             uint64_t*         num_executables) ROCPROFILER_API;
+
 ROCPROFILER_EXTERN_C_FINI
 
 namespace rocprofiler
 {
-namespace code_object
+namespace prestore
 {
-using code_object_array_t    = std::vector<std::unique_ptr<hsa::code_object>>;
-using code_object_iterator_t = std::function<void(const hsa::code_object&)>;
-
-const char*
-name_by_id(uint32_t id);
-
-uint32_t
-id_by_name(const char* name);
-
-std::vector<const char*>
-get_names();
-
-std::vector<uint32_t>
-get_ids();
-
-uint64_t
-get_kernel_id(uint64_t kernel_object);
 
 void
-iterate_loaded_code_objects(code_object_iterator_t&& func);
+code_object_registration_init(HsaApiTable* table);
 
-void
-initialize(HsaApiTable* table);
-
-void
-initialize(HipCompilerDispatchTable* table);
-
-void
-finalize();
-}  // namespace code_object
+}
 }  // namespace rocprofiler

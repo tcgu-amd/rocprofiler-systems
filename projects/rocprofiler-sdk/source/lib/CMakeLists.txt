@@ -8,6 +8,9 @@ add_subdirectory(common)
 add_subdirectory(output)
 add_subdirectory(rocprofiler-sdk)
 
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "prestore")
+add_subdirectory(rocprofiler-sdk-prestore)
+
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME "roctx")
 add_subdirectory(rocprofiler-sdk-roctx)
 

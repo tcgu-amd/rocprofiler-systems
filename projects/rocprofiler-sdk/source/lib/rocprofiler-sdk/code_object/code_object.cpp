@@ -34,6 +34,8 @@
 #include "lib/rocprofiler-sdk/context/context.hpp"
 #include "lib/rocprofiler-sdk/hsa/hsa.hpp"
 
+#include "lib/rocprofiler-sdk-prestore/table.hpp"
+
 #include <rocprofiler-sdk/callback_tracing.h>
 #include <rocprofiler-sdk/fwd.h>
 #include <rocprofiler-sdk/hsa.h>
@@ -799,12 +801,12 @@ initialize_hip_binary_data()
     return is_initialized;
 }
 
+// Contains all operations for tracing we do after a successful executable_freeze
+// Can be called directly for code objects which have already been frozen
+// Used for attachment to capture code objects created before attachment time
 hsa_status_t
-executable_freeze(hsa_executable_t executable, const char* options)
+executable_freeze_internal(hsa_executable_t executable)
 {
-    hsa_status_t status = CHECK_NOTNULL(get_freeze_function())(executable, options);
-    if(status != HSA_STATUS_SUCCESS) return status;
-
     // before iterating code-object populate the host function map from registered binary
     bool is_initialized = initialize_hip_binary_data();
     ROCP_INFO_IF(!is_initialized) << "hip mapping data not initialized";
@@ -951,6 +953,14 @@ executable_freeze(hsa_executable_t executable, const char* options)
     }
 
     return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t
+executable_freeze(hsa_executable_t executable, const char* options)
+{
+    hsa_status_t status = CHECK_NOTNULL(get_freeze_function())(executable, options);
+    if(status != HSA_STATUS_SUCCESS) return status;
+    return rocprofiler::code_object::executable_freeze_internal(executable);
 }
 
 hsa_status_t
@@ -1219,3 +1229,43 @@ iterate_loaded_code_objects(code_object_iterator_t&& func)
 }
 }  // namespace code_object
 }  // namespace rocprofiler
+
+ROCPROFILER_EXTERN_C_INIT
+
+int
+rocprofiler_load_prestore_code_objects(void* incoming_table)
+{
+    if(!incoming_table)
+    {
+        ROCP_ERROR << "incoming table is nullptr";
+        return ROCPROFILER_STATUS_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t incoming_version = *(reinterpret_cast<uint32_t*>(incoming_table));
+
+    if(incoming_version != ROCPROFILER_PRESTORE_TABLE_CURRENT_VERSION)
+    {
+        ROCP_ERROR << "incoming table is blank or bad version";
+        return ROCPROFILER_STATUS_ERROR_INVALID_ARGUMENT;
+    }
+
+    auto prestore_table = reinterpret_cast<rocprofiler_prestore_dispatch_table_t*>(incoming_table);
+
+    std::vector<hsa_executable_t> exported_executables;
+    uint64_t                      exported_executables_count;
+
+    ROCP_FATAL_IF(prestore_table->rocprofiler_prestore_export_all_code_objects(
+                      nullptr, &exported_executables_count) != 0);
+    exported_executables.resize(exported_executables_count);
+    ROCP_FATAL_IF(prestore_table->rocprofiler_prestore_export_all_code_objects(
+                      exported_executables.data(), &exported_executables_count) != 0);
+    ROCP_INFO << "Got " << exported_executables_count << " executables from the prestore library";
+    for(auto& exec : exported_executables)
+    {
+        ROCP_INFO << "Adding code object for " << exec.handle;
+        rocprofiler::code_object::executable_freeze_internal(exec);
+    }
+    return ROCPROFILER_STATUS_SUCCESS;
+}
+
+ROCPROFILER_EXTERN_C_FINI
