@@ -123,6 +123,7 @@ rocprofsys_attach(size_t pid, std::vector<char*> env)
     
     // register the API table for rocprofiler. We have to explictly call this here.
     ptrace_session->call_function("librocprofiler-register.so", "rocprofiler_register_invoke_all_registrations", nullptr); 
+    ptrace_session->call_function("librocprofiler-register.so", "rocprofiler_register_invoke_prestore_loads", nullptr); 
     ptrace_session->stop();
     ptrace_session->detach();
 

@@ -558,8 +558,6 @@ rocprofsys_init_tooling_hidden(void)
 
     rocprofsys_init_library_hidden();
 
-    bool _is_attach = config::is_attach_mode();
-
     ROCPROFSYS_DEBUG_F("\n");
 
     auto _dtor = scope::destructor{ []() {
@@ -594,6 +592,12 @@ rocprofsys_init_tooling_hidden(void)
             push_enable_sampling_on_child_threads(get_use_sampling());
             sampling::unblock_signals();
         }
+
+        #if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+            ROCPROFSYS_VERBOSE_F(1, "Setting up ROCm tracing...\n");
+            rocprofiler_sdk::setup();
+            if(is_attach_mode() && get_use_rocm()) rocprofiler_sdk::start();
+        #endif
         get_main_bundle()->start();
         ROCPROFSYS_DEBUG_F("State: %s -> State::Active\n",
                            std::to_string(get_state()).c_str());
@@ -605,13 +609,6 @@ rocprofsys_init_tooling_hidden(void)
     // ideally these have already been started
     rocprofsys_preinit_hidden();
 
-#if ROCPROFSYS_USE_ROCM > 0
-    if(_is_attach && get_use_rocm())
-    {
-        ROCPROFSYS_VERBOSE_F(1, "Setting up ROCm tracing...\n");
-        rocprofiler_sdk::setup();
-    }
-#endif
     // start these gotchas once settings have been initialized
     if(get_init_bundle()) get_init_bundle()->start();
 
@@ -677,9 +674,7 @@ rocprofsys_init_tooling_hidden(void)
 
     categories::setup();
 
-#if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
-    if(_is_attach && get_use_rocm()) rocprofiler_sdk::start();
-#endif
+
     // if static objects are destroyed in the inverse order of when they are
     // created this should ensure that finalization is called before perfetto
     // ends the tracing session
