@@ -800,17 +800,19 @@ configure(bool _setup, int64_t _tid)
         if(get_use_tmp_files())
         {
             auto _file = get_offload_file();
-            if (!_file) {
-                //Initialize the offload file. This is necessary in the case of re-attach
-                auto& _tmp_v = get_offload_file();
-                _tmp_v = config::get_tmp_file("sampling");
+            if(!_file)
+            {
+                // Initialize the offload file. This is necessary in the case of re-attach
+                auto& _tmp_v  = get_offload_file();
+                _tmp_v        = config::get_tmp_file("sampling");
                 auto _success = _tmp_v->open();
                 ROCPROFSYS_CI_FAIL(!_success,
-                                "Error opening sampling offload temporary file '%s'\n",
-                                _tmp_v->filename.c_str());
+                                   "Error opening sampling offload temporary file '%s'\n",
+                                   _tmp_v->filename.c_str());
             }
-            if(_file && *_file) {
-                //Ensure that the offload file is open
+            if(_file && *_file)
+            {
+                // Ensure that the offload file is open
                 _sampler->set_offload(&offload_buffer);
             };
         }

@@ -19,14 +19,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-#include <memory>
-#include "ptrace_session.hpp"
-#include <signal.h>
-#include <fcntl.h>  
-#include <unistd.h>
-#include <cstdio>
-#include <sys/stat.h>
 #include "attach.hpp"
+#include "ptrace_session.hpp"
+#include <cstdio>
+#include <fcntl.h>
+#include <memory>
+#include <signal.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace common = ::rocprofsys::common;
 
@@ -34,120 +34,128 @@ const char* NOTIFY_PIPE_PATH = "/tmp/rocprofsys_detach_pipe";
 
 namespace
 {
-void** get_dl_handle(){
+void**
+get_dl_handle()
+{
     static void* handle = nullptr;
     return &handle;
 }
 
-void prepare_for_detach(){
+void
+prepare_for_detach()
+{
     umask(0);
-    unlink(NOTIFY_PIPE_PATH);  
-    if (mkfifo(NOTIFY_PIPE_PATH, 0666) == -1) {  
-        std::cerr << "Failed to create named pipe: " << strerror(errno) << std::endl;  
-        return;  
+    unlink(NOTIFY_PIPE_PATH);
+    if(mkfifo(NOTIFY_PIPE_PATH, 0666) == -1)
+    {
+        std::cerr << "Failed to create named pipe: " << strerror(errno) << std::endl;
+        return;
     }
 }
-} // namespace
+}  // namespace
 
-extern "C" 
+extern "C"
 {
-
-int
-rocprofsys_attach(size_t pid, std::vector<char*> env)
-{  
-    rocprofsys::attach::get_verbose()=rocprofsys::common::get_env("ROCPROFSYS_VERBOSE", 0);
-    std::cout << "Process id of host: " << getpid() << std::endl;
-    std::cout << "Attachment library called for pid " << pid << std::endl;
-    auto ptrace_session = std::make_unique<rocprofsys::attach::PTraceSession>(pid);
-    ROCPROFSYS_INFO << "Attempting attachment to pid " << pid << std::endl;
-    if (!ptrace_session->attach())
+    int rocprofsys_attach(size_t pid, std::vector<char*> env)
     {
-        ROCPROFSYS_ERROR << "Attachment failed to pid " << pid << std::endl;
-    }
-    ROCPROFSYS_INFO << "Attachment success to pid " << pid << std::endl;
-
-    // Environment_buffer is a null-character delimited list of name value pairs.
-    // Each name and value is delimited separately.
-    // The first 4 bytes contain an uint32_t count of pairs
-
-    std::vector<uint8_t> environment_buffer(4);
-    {
-        uint32_t var_count = 0;
-        for (char* var: env)
+        rocprofsys::attach::get_verbose() =
+            rocprofsys::common::get_env("ROCPROFSYS_VERBOSE", 0);
+        std::cout << "Process id of host: " << getpid() << std::endl;
+        std::cout << "Attachment library called for pid " << pid << std::endl;
+        auto ptrace_session = std::make_unique<rocprofsys::attach::PTraceSession>(pid);
+        ROCPROFSYS_INFO << "Attempting attachment to pid " << pid << std::endl;
+        if(!ptrace_session->attach())
         {
-            if (strncmp("ROCPROF", var, 7) != 0)
+            ROCPROFSYS_ERROR << "Attachment failed to pid " << pid << std::endl;
+        }
+        ROCPROFSYS_INFO << "Attachment success to pid " << pid << std::endl;
+
+        // Environment_buffer is a null-character delimited list of name value pairs.
+        // Each name and value is delimited separately.
+        // The first 4 bytes contain an uint32_t count of pairs
+
+        std::vector<uint8_t> environment_buffer(4);
+        {
+            uint32_t var_count = 0;
+            for(char* var : env)
             {
-                continue;
+                if(strncmp("ROCPROF", var, 7) != 0)
+                {
+                    continue;
+                }
+                var_count++;
+                ROCPROFSYS_INFO << "Adding to environment buffer: " << var << std::endl;
+                while(*var != '=')
+                {
+                    environment_buffer.emplace_back(*var++);
+                }
+                environment_buffer.emplace_back(0);
+                var++;
+                while(*var)
+                {
+                    environment_buffer.emplace_back(*var++);
+                }
+                environment_buffer.emplace_back(0);
             }
-            var_count++;
-            ROCPROFSYS_INFO << "Adding to environment buffer: " << var << std::endl;
-            while(*var != '=')
-            {
-                environment_buffer.emplace_back(*var++);
-            }
-            environment_buffer.emplace_back(0);
-            var++;
-            while(*var)
-            {
-                environment_buffer.emplace_back(*var++);
-            }
-            environment_buffer.emplace_back(0);
+
+            const uint8_t* var_count_bytes = reinterpret_cast<uint8_t*>(&var_count);
+            std::copy(var_count_bytes, var_count_bytes + 4, environment_buffer.data());
         }
 
-        const uint8_t* var_count_bytes = reinterpret_cast<uint8_t*>(&var_count);
-        std::copy(var_count_bytes, var_count_bytes + 4, environment_buffer.data());
+        // now, allocate a buffer to store the environment variables
+        void* environment_buffer_addr = nullptr;
+        ptrace_session->simple_mmap(environment_buffer_addr, environment_buffer.size());
+        ROCPROFSYS_INFO << "mmap'd in target process at " << environment_buffer_addr
+                        << std::endl;
+
+        // write to that buffer
+        ptrace_session->stop();
+        ptrace_session->write(reinterpret_cast<size_t>(environment_buffer_addr),
+                              environment_buffer, environment_buffer.size());
+        ptrace_session->cont();
+        ROCPROFSYS_INFO << "wrote environment buffer to target process" << std::endl;
+
+        // dlopen librocprof-sys-dl.so on the target
+        void* handle = (void*) ptrace_session->open_library("librocprof-sys-dl.so");
+        if(handle == nullptr)
+        {
+            ROCPROFSYS_ERROR
+                << "Failed to open library librocprof-sys-dl.so in target process"
+                << std::endl;
+            return -1;
+        }
+        ROCPROFSYS_INFO << "Opened library librocprof-sys-dl.so in target process at "
+                        << handle << std::endl;
+
+        // execute the attach function with the buffer addr as parameter
+        ptrace_session->call_function("librocprof-sys-dl.so", "rocprofsys_dl_attach",
+                                      environment_buffer_addr);
+
+        ptrace_session->stop();
+        ptrace_session->detach();
+
+        prepare_for_detach();
+        return 0;
     }
 
-    // now, allocate a buffer to store the environment variables
-    void* environment_buffer_addr = nullptr;
-    ptrace_session->simple_mmap(environment_buffer_addr, environment_buffer.size());
-    ROCPROFSYS_INFO << "mmap'd in target process at " << environment_buffer_addr << std::endl;
-
-    // write to that buffer
-    ptrace_session->stop();
-    ptrace_session->write(reinterpret_cast<size_t>(environment_buffer_addr), environment_buffer, environment_buffer.size());
-    ptrace_session->cont();
-    ROCPROFSYS_INFO << "wrote environment buffer to target process" << std::endl;
-
-    // dlopen librocprof-sys-dl.so on the target 
-    void* handle = (void*) ptrace_session->open_library("librocprof-sys-dl.so");
-    if (handle == nullptr)
+    void rocprofsys_detach(size_t pid)
     {
-        ROCPROFSYS_ERROR << "Failed to open library librocprof-sys-dl.so in target process" << std::endl;
-        return -1;
+        kill(pid, SIGUSR1);
+        ROCPROFSYS_INFO << "Sent detach signal to pid " << pid << std::endl;
+        std::cout << "Waiting for detach completion via pipe..." << std::endl;
+        int pipe_fd = open(NOTIFY_PIPE_PATH, O_RDONLY);
+        if(pipe_fd == -1)
+        {
+            std::cerr << "Failed to open pipe for reading: " << strerror(errno)
+                      << std::endl;
+            unlink(NOTIFY_PIPE_PATH);  // Clean up
+            return;
+        }
+        char confirmation_buf[1];
+        char _ =
+            read(pipe_fd, confirmation_buf, 1);  // This unblocks when the target writes.
+        close(pipe_fd);
+        unlink(NOTIFY_PIPE_PATH);
+        std::cout << "Detach confirmed" << std::endl;
     }
-    ROCPROFSYS_INFO << "Opened library librocprof-sys-dl.so in target process at " << handle << std::endl;
-
-    // execute the attach function with the buffer addr as parameter
-    ptrace_session->call_function("librocprof-sys-dl.so", "rocprofsys_dl_attach", environment_buffer_addr);
-    
-    // register the API table for rocprofiler. We have to explictly call this here.
-    ptrace_session->call_function("librocprofiler-register.so", "rocprofiler_register_invoke_all_registrations", nullptr); 
-    ptrace_session->call_function("librocprofiler-register.so", "rocprofiler_register_invoke_prestore_loads", nullptr); 
-    ptrace_session->stop();
-    ptrace_session->detach();
-
-    prepare_for_detach();
-    return 0;
-}
-
-void
-rocprofsys_detach(size_t pid)
-{
-    kill(pid,SIGUSR1); 
-    ROCPROFSYS_INFO << "Sent detach signal to pid " << pid << std::endl;
-    std::cout << "Waiting for detach completion via pipe..." << std::endl;  
-    int pipe_fd = open(NOTIFY_PIPE_PATH, O_RDONLY);  
-    if (pipe_fd == -1) {  
-        std::cerr << "Failed to open pipe for reading: " << strerror(errno) << std::endl;  
-        unlink(NOTIFY_PIPE_PATH); // Clean up  
-        return;  
-    }
-    char confirmation_buf[1];  
-    char _ = read(pipe_fd, confirmation_buf, 1); // This unblocks when the target writes.
-    close(pipe_fd);  
-    unlink(NOTIFY_PIPE_PATH); 
-    std::cout << "Detach confirmed" << std::endl;  
-}
-
 }

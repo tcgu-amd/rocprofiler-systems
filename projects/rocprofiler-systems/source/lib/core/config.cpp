@@ -211,7 +211,6 @@ configure_settings(bool _init, bool _force)
     if(_once && !_force) return;
     _once = true;
 
-
     if(settings_are_configured()) return;
 
     if(is_ci_value && get_state() < State::Init)
@@ -249,7 +248,7 @@ configure_settings(bool _init, bool _force)
                                ROCPROFSYS_ROCM_VERSION_PATCH);
 #endif
 
-    is_attach_mode() = tim::get_env("ROCPROFSYS_ATTACH_PID", 0) !=0;
+    is_attach_mode() = tim::get_env("ROCPROFSYS_ATTACH_PID", 0) != 0;
 
     auto _config = *get_config_impl();
 
@@ -1365,7 +1364,7 @@ configure_signal_handler(const std::shared_ptr<settings>& _config)
     }
     // Set up custom signals handlers for detaching.
     // Avoid using timeory's signal handler because it kills the process.
-    int DETACH_SIG = 10;  // SIGUSR1
+    int              DETACH_SIG = 10;  // SIGUSR1
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_sigaction = rocprofsys_attach_detach_action;

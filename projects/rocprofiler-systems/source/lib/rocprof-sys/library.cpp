@@ -91,14 +91,14 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <fcntl.h>
 #include <mutex>
 #include <pthread.h>
 #include <stdexcept>
 #include <string_view>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <utility>
-#include <fcntl.h>
-#include <sys/stat.h>
 
 using namespace rocprofsys;
 
@@ -410,7 +410,7 @@ rocprofsys_set_mpi_hidden(bool use, bool attached)
                                    "use: %s, attached: %s\n", (use) ? "y" : "n",
                                    (attached) ? "y" : "n");
 
-    _set_mpi_called       = true;
+    _set_mpi_called           = true;
     config::is_mpi_attached() = attached;
 
     if(use && !attached && get_state() == State::PreInit)
@@ -455,10 +455,10 @@ rocprofsys_init_library_hidden()
 
     if(get_state() != State::PreInit || get_state() == State::Init || _once)
     {
-        if (get_state() < State::Detached)
+        if(get_state() < State::Detached)
             return;  // We want to allow this function to be called from detached state to
                      // allow repeated attach
-    } 
+    }
     _once = true;
 
     ROCPROFSYS_SCOPED_THREAD_STATE(ThreadState::Internal);
@@ -476,9 +476,9 @@ rocprofsys_init_library_hidden()
         (void) _ss;
     }
 
-    if (get_state() == State::Detached)
+    if(get_state() == State::Detached)
     {
-        //If in detached state, we want to force reconfigure settings
+        // If in detached state, we want to force reconfigure settings
         config::set_detach_signal_handler(&detach_handler);
         configure_settings(true, true);
         set_state(State::Init);
@@ -531,9 +531,9 @@ rocprofsys_init_tooling_hidden(void)
 
     if(get_state() != State::PreInit || get_state() == State::Init || _once == getpid())
     {
-        //We want to allow this function to be called from detached state to allow repeated attach
-        if (get_state() < State::Detached)
-            return false;
+        // We want to allow this function to be called from detached state to allow
+        // repeated attach
+        if(get_state() < State::Detached) return false;
     }
     _once = getpid();
 
@@ -593,11 +593,11 @@ rocprofsys_init_tooling_hidden(void)
             sampling::unblock_signals();
         }
 
-        #if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
-            ROCPROFSYS_VERBOSE_F(1, "Setting up ROCm tracing...\n");
-            rocprofiler_sdk::setup();
-            if(is_attach_mode() && get_use_rocm()) rocprofiler_sdk::start();
-        #endif
+#if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+        ROCPROFSYS_VERBOSE_F(1, "Setting up ROCm tracing...\n");
+        rocprofiler_sdk::setup();
+        if(is_attach_mode() && get_use_rocm()) rocprofiler_sdk::start();
+#endif
         get_main_bundle()->start();
         ROCPROFSYS_DEBUG_F("State: %s -> State::Active\n",
                            std::to_string(get_state()).c_str());
@@ -673,7 +673,6 @@ rocprofsys_init_tooling_hidden(void)
     }
 
     categories::setup();
-
 
     // if static objects are destroyed in the inverse order of when they are
     // created this should ensure that finalization is called before perfetto
@@ -962,7 +961,7 @@ rocprofsys_finalize_hidden(void)
     // stop the main gotcha which shuts down the pthread gotchas
     if(get_init_bundle())
     {
-    ROCPROFSYS_DEBUG_F("Stopping main gotcha...\n");
+        ROCPROFSYS_DEBUG_F("Stopping main gotcha...\n");
         get_init_bundle()->stop();
 
         pthread_gotcha::shutdown();
@@ -1120,16 +1119,20 @@ rocprofsys_finalize_hidden(void)
 
     if(_is_attach)
     {
-        //Send signal to controller to finish cleaning up
-        const char* NOTIFY_PIPE_PATH = "/tmp/rocprofsys_detach_pipe";  //Hardcoded path
-        int pipe_fd = open(NOTIFY_PIPE_PATH, O_WRONLY);  
-        if (pipe_fd != -1) {  
-            size_t _ = write(pipe_fd, "D", 1); // Write one byte to unblock the controller  
-            close(pipe_fd);  
-        } else {  
-            // Log an error if possible  
-            fprintf(stderr, "[TARGET ERROR] Could not open notify pipe.\n");  
-        } 
+        // Send signal to controller to finish cleaning up
+        const char* NOTIFY_PIPE_PATH = "/tmp/rocprofsys_detach_pipe";  // Hardcoded path
+        int         pipe_fd          = open(NOTIFY_PIPE_PATH, O_WRONLY);
+        if(pipe_fd != -1)
+        {
+            size_t _ =
+                write(pipe_fd, "D", 1);  // Write one byte to unblock the controller
+            close(pipe_fd);
+        }
+        else
+        {
+            // Log an error if possible
+            fprintf(stderr, "[TARGET ERROR] Could not open notify pipe.\n");
+        }
         set_state(State::Detached);
         ROCPROFSYS_VERBOSE_F(1, "Resuming normal execution.\n");
     }
@@ -1138,7 +1141,7 @@ rocprofsys_finalize_hidden(void)
         { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Stop },
         [](int) {});
 
-    if (_is_attach) return;
+    if(_is_attach) return;
 
     common::destroy_static_objects();
     if(get_use_rocpd())

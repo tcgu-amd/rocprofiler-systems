@@ -1155,8 +1155,6 @@ is_valid(rocprofiler_context_id_t ctx)
     return (errc == ROCPROFILER_STATUS_SUCCESS && status > 0);
 }
 
-
-
 int
 set_kernel_rename_and_stream_correlation_id(
     rocprofiler_thread_id_t /* thr_id */, rocprofiler_context_id_t /* ctx_id */,

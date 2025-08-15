@@ -1368,30 +1368,32 @@ verify_instrumented_preloaded()
     std::quick_exit(EXIT_FAILURE);
 }
 
-void 
+void
 load_environment_buffer(const char* environment_buffer)
 {
     // Environment_buffer is a null-character delimited list of name value pairs.
     // Each name and value is delimited separately.
     // The first 4 bytes contain an uint32_t count of pairs
 
-    if (!environment_buffer)
+    if(!environment_buffer)
     {
-        ROCPROFSYS_DL_LOG(1, "Attachment was invoked with no environment variables provided for what to trace.");
+        ROCPROFSYS_DL_LOG(1, "Attachment was invoked with no environment variables "
+                             "provided for what to trace.");
         return;
     }
 
     const uint32_t pair_count = *reinterpret_cast<const uint32_t*>(environment_buffer);
-    const char* position = environment_buffer + sizeof(uint32_t);
-    for (uint32_t pair_idx = 0; pair_idx < pair_count; ++pair_idx)
+    const char*    position   = environment_buffer + sizeof(uint32_t);
+    for(uint32_t pair_idx = 0; pair_idx < pair_count; ++pair_idx)
     {
         const char* name = position;
         position += strlen(name) + 1;
         const char* value = position;
         position += strlen(value) + 1;
 
-        ROCPROFSYS_DL_LOG(2, "Attachment adding environment variable: %s=%s\n", name, value);
-        setenv(name, value, 1);        
+        ROCPROFSYS_DL_LOG(2, "Attachment adding environment variable: %s=%s\n", name,
+                          value);
+        setenv(name, value, 1);
     }
 }
 
@@ -1570,24 +1572,39 @@ extern "C"
         using ::rocprofsys::common::get_env;
         using ::rocprofsys::dl::get_default_mode;
 
-        if (env_buff)
-            ::rocprofsys::dl::load_environment_buffer(env_buff);
+        if(env_buff) ::rocprofsys::dl::load_environment_buffer(env_buff);
         auto _pid = get_env("ROCPROFSYS_ATTACH_PID", -1);
 
-        if (_pid < 0)
+        if(_pid < 0)
         {
-            ROCPROFSYS_DL_LOG(0, "Trying to launch in ATTACH MODE, but ROCPROFSYS_ATTACH_PID is not set or invalid.\n");
+            ROCPROFSYS_DL_LOG(0, "Trying to launch in ATTACH MODE, but "
+                                 "ROCPROFSYS_ATTACH_PID is not set or invalid.\n");
             return -1;
         }
-        
+
         auto _mode = get_env("ROCPROFSYS_MODE", get_default_mode());
         rocprofsys_init(_mode.c_str(),
                         dl::get_instrumented() == dl::InstrumentMode::BinaryRewrite,
                         std::string{}.c_str());
-                        
+
         rocprofsys::dl::get_inited() = false;
         rocprofsys::dl::get_active() = false;
         rocprofsys::dl::get_finied() = false;
+
+// Call these functions from librocprfiler-register to enable hip API tracing and kernel
+// dispatch tracing
+#if defined(ROCPROFSYS_USE_ROCM) && ROCPROFSYS_USE_ROCM > 0
+        void (*register_api_table_fn)(void*);
+        void (*register_prestore_fn)(void*);
+        void* lib_reg = dlopen("librocprofiler-register", RTLD_NOW);
+        *(void**) (&register_api_table_fn) =
+            dlsym(lib_reg, "rocprofiler_register_invoke_all_registrations");
+        *(void**) (&register_prestore_fn) =
+            dlsym(lib_reg, "rocprofiler_register_invoke_prestore_loads");
+
+        register_api_table_fn(nullptr);
+        register_prestore_fn(nullptr);
+#endif
         return 0;
     }
 }  // extern "C"

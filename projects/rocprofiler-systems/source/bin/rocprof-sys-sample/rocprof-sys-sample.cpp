@@ -55,7 +55,8 @@ main(int argc, char** argv)
 
     print_updated_environment(_env);
 
-    if(*(get_pid()) > 0){
+    if(*(get_pid()) > 0)
+    {
         // If the pid is greate than 0, it means we are running in the attach mode.
         return attach(_env);
     }
